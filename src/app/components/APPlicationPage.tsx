@@ -1,11 +1,50 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Box, Typography, Button, Grid, TextField } from '@mui/material';
+import axios from 'axios';
 
-const ApplicationPage = () => {
+
+
+interface ApplicationPageProps {
+  requestId: number; // Укажите здесь правильный тип для requestId
+}
+
+
+type Request = {
+  id: number;
+  date: Date;
+  orderReason: string;
+  subOrderReason: string;
+  comment: string;
+  approvedForPurchase: boolean;
+  approvedForPayment: boolean;
+  promptness: string;
+  invoiceNumber: string;
+  additionalComment: string;
+  status: { id: number; name: string };
+  otdel: { id: number; name: string };
+  sector: { id: number; name: string };
+  creator: { firstName: string; lastName: string };
+  items: { id: number; item: string; quantity: number; amount: number; unitMeasurement: string }[];
+  // Добавьте остальные поля по необходимости
+};
+
+const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [inWork, setInWork] = useState(false);
+  const [requestData, setRequestData] = useState<Request | null>(null)
+
+
+  // Название кнопок
+  const workButton = 'В РАБОТУ'
+  const correctionButton = 'ОТПРАВИТЬ НА УТОЧНЕНИЕ'
+
+  useEffect(() => {
+    // console.log(requestData);
+  }, [requestData])
+
+
 
   const images: string[] = []; // Пример пустого массива, если изображений нет
 
@@ -13,9 +52,50 @@ const ApplicationPage = () => {
     setSelectedImage(index);
   };
 
-  const handleInWorkClick = () => {
-    setInWork(true); // Скрываем кнопки и показываем форму
+  const handleInWorkClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    const buttonText = (event.currentTarget as HTMLButtonElement).innerText;
+    // setInWork(true); // Скрываем кнопки и показываем форму
+    const id: number = requestData?.id || 0;
+   
+  
+    if (buttonText === workButton) {
+      try {
+        const statusPut: number = 4; // статус в работу
+        await axios.put('/api/getSnabData', { id, statusPut });
+        console.log('Данные успешно обновлены');
+      } catch (error) {
+        console.error('Ошибка при обновлении данных:', error);
+      }
+    } else if (buttonText === correctionButton) {
+      try {
+        const statusPut: number = 10; // статус на уточнении
+        await axios.put('/api/getSnabData', { id, statusPut });
+        console.log('Данные успешно обновлены');
+      } catch (error) {
+        console.error('Ошибка при обновлении данных:', error);
+      }
+    }
   };
+  
+
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        const response = await axios.get('/api/getSnabData', {
+          params: { requestId }, // передаем requestId через params
+        });
+        const data: Request = response.data; // Получаем данные напрямую из response.data
+        setRequestData(data)
+
+      } catch (error) {
+        console.error('Ошибка при загрузке заявок:', error);
+      }
+    };
+
+    fetchRequests();
+  }, [requestId]); // Зависимость от requestId, если он может измениться
+
+
 
   return (
     <Box
@@ -41,10 +121,12 @@ const ApplicationPage = () => {
         }}
       >
         <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-          Заявка №12345
+          Заявка № {requestData?.id || '....Загрузка'}
+
         </Typography>
         <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-          Дата: 23.10.2024
+          Дата: {new Date(requestData?.date || '....Загрузка').toLocaleDateString('ru-RU')}
+
         </Typography>
       </Grid>
 
@@ -158,7 +240,7 @@ const ApplicationPage = () => {
                 Кто:
               </Typography>
               <Typography variant="body1" sx={{ color: '#333' }}>
-                Иван Иванов, Технолог, Участок №5
+                {`${requestData?.creator.firstName || '....Загрузка'} ${requestData?.creator.lastName || '....Загрузка'}. ${requestData?.otdel.name || '....Загрузка'}, ${requestData?.sector.name || '....Загрузка'}`}
               </Typography>
             </Box>
 
@@ -175,7 +257,7 @@ const ApplicationPage = () => {
                 Что заказано:
               </Typography>
               <Typography variant="body1" sx={{ color: '#333' }}>
-                10 единиц металлопроката
+                {`${requestData?.items[0].item || '....Загрузка'} - ${requestData?.items[0].quantity || '....Загрузка'} ${requestData?.items[0].unitMeasurement || '....Загрузка'}`}
               </Typography>
             </Box>
 
@@ -192,7 +274,12 @@ const ApplicationPage = () => {
                 Зачем:
               </Typography>
               <Typography variant="body1" sx={{ color: '#333' }}>
-                Для сборки каркасов
+                <>
+                  {requestData?.orderReason || '....Загрузка'}
+                  <br />
+                  {requestData?.subOrderReason || '....Загрузка'}
+                </>
+
               </Typography>
             </Box>
 
@@ -209,7 +296,7 @@ const ApplicationPage = () => {
                 Комментарий:
               </Typography>
               <Typography variant="body1" sx={{ color: '#333' }}>
-                Требуется срочная поставка
+                {`${requestData?.comment}`}
               </Typography>
             </Box>
 
@@ -233,7 +320,7 @@ const ApplicationPage = () => {
                   borderRadius: '4px',
                 }}
               >
-                Высокая
+                {`${requestData?.promptness}`}
               </Typography>
             </Box>
           </Box>
@@ -244,10 +331,10 @@ const ApplicationPage = () => {
       {!inWork && (
         <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
           <Button variant="contained" color="primary" onClick={handleInWorkClick} sx={{ minWidth: '150px' }}>
-            В работу
+            {workButton}
           </Button>
-          <Button variant="outlined" color="secondary" sx={{ minWidth: '150px' }}>
-            Отправить на уточнение
+          <Button variant="outlined" color="secondary" onClick={handleInWorkClick} sx={{ minWidth: '150px' }}>
+            {correctionButton}
           </Button>
         </Box>
       )}
@@ -273,6 +360,8 @@ const ApplicationPage = () => {
           </Typography>
 
           <TextField label="Поставщик" fullWidth />
+          <TextField label="Наименование из 1С" fullWidth />
+          <TextField label="Наименование у поставщика" fullWidth />
           <TextField label="Номер счета / КП" fullWidth />
           <TextField label="Сумма" fullWidth />
           <TextField label="Срок поставки" type="date" InputLabelProps={{ shrink: true }} fullWidth />

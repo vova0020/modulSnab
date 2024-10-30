@@ -1,193 +1,269 @@
 'use client'
-import React, { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Select, MenuItem, Button, Typography
-} from '@mui/material';
-import { styled } from '@mui/system';
+import React, { useEffect, useState } from 'react';
+import { ruRU } from '@mui/x-data-grid/locales/ruRU';
+import { Box, Typography, MenuItem, Select, SelectChangeEvent } from '@mui/material';
+import axios from 'axios';
+import { GridColDef, DataGrid, GridRenderCellParams } from '@mui/x-data-grid';
+import Navbar from '@/app/components/navbar';
 
-type TableRowData = {
+type OrderRow = {
   id: number;
-  kto: string;
-  chto: string;
-  kol: number;
-  zachem: string;
-  soglasovatKZakazu: string;
-  schetNomer: string;
-  summa: number;
-  soglasovatPokupku: string;
+  date: Date,
+  orderReason: string,
+  invoiceNumber: string,
+  status: string,
+  approvedForPurchase: boolean,
+  approvedForPayment: boolean,
+  creator: string,
+  itemsId: number,
+  itemsName: string,
+  itemsQuantity: number,
+  itemsAmount: number,
+  orderApprovalStatus: string;
+  purchaseApprovalStatus: string;
 };
 
-const initialData: TableRowData[] = [
-  { id: 1, kto: 'Иванов', chto: 'Товар 1', kol: 10, zachem: 'Для проекта', soglasovatKZakazu: 'Да', schetNomer: '123', summa: 1000, soglasovatPokupku: 'Да' },
-  { id: 2, kto: 'Петров', chto: 'Товар 2', kol: 5, zachem: 'Для теста', soglasovatKZakazu: 'Нет', schetNomer: '456', summa: 500, soglasovatPokupku: 'Отложить' },
-  { id: 3, kto: 'Сидоров', chto: 'Товар 3', kol: 20, zachem: 'Для работы', soglasovatKZakazu: 'Отложить', schetNomer: '789', summa: 2000, soglasovatPokupku: 'Нет' },
-];
-
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  fontWeight: 'bold',
-  backgroundColor: '#F7F7F7',
-  color: '#333',
-  padding: '16px',
-  textAlign: 'center',
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme, status }: { theme?: any, status: string }) => ({
-  '&:nth-of-type(odd)': {
-    backgroundColor: '#FAFAFA',
-  },
-  '&:hover': {
-    backgroundColor: '#f0f0f0',
-  },
-  backgroundColor: () => {
-    if (status === 'Да') return '#C8E6C9';  // Зеленый для "Да"
-    if (status === 'Нет') return '#FFCDD2';  // Красный для "Нет"
-    if (status === 'Отложить') return '#FFF9C4';  // Желтый для "Отложить"
-    return 'inherit';
-  },
-}));
-
-const StyledSelect = styled(Select)({
-  width: '150px',
-  padding: '8px',
-  backgroundColor: '#fff',
-  borderRadius: '4px',
-  '& .MuiSelect-select': {
-    padding: '10px',
-  },
-});
-
-const SubmitButton = styled(Button)({
-  backgroundColor: '#4CAF50',
-  color: '#fff',
-  marginTop: '20px',
-  '&:hover': {
-    backgroundColor: '#45A049',
-  },
-});
-
-const FilterSelect = styled(Select)({
-  marginRight: '10px',
-  width: '200px',
-});
-
 const TablePage = () => {
-  const { control, handleSubmit } = useForm();
-  const [filterKZakazu, setFilterKZakazu] = useState<string>('');
-  const [filterPokupku, setFilterPokupku] = useState<string>('');
-  const [filteredData, setFilteredData] = useState<TableRowData[]>(initialData);
+  const [rows, setRows] = useState<OrderRow[]>([]);
 
-  const handleFilterChange = () => {
-    const filtered = initialData.filter((row) =>
-      (filterKZakazu === '' || row.soglasovatKZakazu === filterKZakazu) &&
-      (filterPokupku === '' || row.soglasovatPokupku === filterPokupku)
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get('/api/aplicationsTable');
+        setRows(response.data);
+      } catch (error) {
+        console.error('Ошибка при загрузке данных:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleApprovalChange = async (id: number, field: string, value: string) => {
+    // Обновляем состояние локально
+    setRows((prevRows) =>
+      prevRows.map((row) =>
+        row.id === id ? { ...row, [field]: value } : row
+      )
     );
-    setFilteredData(filtered);
+  
+    // Отправляем данные на сервер
+    try {
+      await axios.put('/api/aplicationsTable', { id, field, value });
+      console.log('Данные успешно обновлены');
+    } catch (error) {
+      console.error('Ошибка при обновлении данных:', error);
+      // Здесь можно добавить уведомление для пользователя о том, что произошла ошибка
+    }
   };
 
-  const onSubmit = (formData: any) => {
-    console.log(formData);
-  };
+  // Обработчик для изменений в других ячейках (например, itemsQuantity, itemsAmount и invoiceNumber)
+ const handleCellEditCommit = async (params) => {
+  console.log( params); // Проверка вызова функции
+
+
+  const updateData = params
+
+  try {
+    // Отправляем PUT-запрос для обновления значения в базе данных
+    const response = await axios.put('/api/tableUpdate', { updateData });
+    console.log('Ответ от сервера:', response.data); // Проверка ответа от сервера
+
+    // // Обновляем локальное состояние после успешного запроса
+    // setRows((prevRows) =>
+    //   prevRows.map((row) =>
+    //     row.id === id ? { ...row, [field]: value } : row
+    //   )
+    // );
+
+    console.log(`Поле ${params.id} успешно обновлено`);
+  } catch (error) {
+    console.error('Ошибка при обновлении поля:', error);
+  }
+};
+
+  
+  
+
+  const columns: GridColDef[] = [
+    { field: 'id', headerName: '№',  width: 10 },
+    { field: 'creator', headerName: 'Кто',  width: 140 },
+    { field: 'itemsName', headerName: 'Что', editable: true, width: 150 },
+    { field: 'itemsQuantity', headerName: 'Кол', type: 'number', editable: true, width: 150 },
+    { field: 'orderReason', headerName: 'Зачем',  width: 250 },
+    {
+      field: 'soglZakaz',
+      headerName: 'Согласовать к заказу',
+      width: 200,
+      renderCell: (params: GridRenderCellParams) => (
+        <div
+          style={{
+            backgroundColor: params.row.approvedForPurchase ? '#dff0d8' : params.row.status == "Отложено" ? '#898989' : 'inherit', // Зеленый цвет для согласованного статуса
+            // margin: '8px',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          {params.row.approvedForPurchase ? (
+            'Согласовано'
+          ) :  ( params.row.status == "Отложено" ?(
+            <Select
+            value={params.value || ''}
+            onChange={(event: SelectChangeEvent) =>
+              handleApprovalChange(params.id as number, 'soglZakaz', event.target.value)
+            }
+            displayEmpty
+            sx={{ width: '100%', fontSize: 14 }}
+          >
+            <MenuItem value="" disabled>
+              Отложено
+            </MenuItem>
+            <MenuItem value="Да">Да</MenuItem>
+            <MenuItem value="Нет">Нет</MenuItem>
+            <MenuItem value="Отложить">Отложить</MenuItem>
+          </Select>
+          ) : (
+            <Select
+            value={params.value || ''}
+            onChange={(event: SelectChangeEvent) =>
+              handleApprovalChange(params.id as number, 'soglZakaz', event.target.value)
+            }
+            displayEmpty
+            sx={{ width: '100%', fontSize: 14 }}
+          >
+            <MenuItem value="" disabled>
+              Выбрать значение
+            </MenuItem>
+            <MenuItem value="Да">Да</MenuItem>
+            <MenuItem value="Нет">Нет</MenuItem>
+            <MenuItem value="Отложить">Отложить</MenuItem>
+          </Select>
+          )
+          
+          )}
+        </div>
+      ),
+    },
+    
+    
+    { field: 'invoiceNumber', headerName: 'Счет №', editable: true, width: 150 },
+    { field: 'itemsAmount', headerName: 'Сумма', editable: true, width: 150 },
+    {
+      field: 'soglOplata',
+      headerName: 'Согласовать покупку',
+      width: 200,
+      renderCell: (params: GridRenderCellParams) => (
+        <div
+          style={{
+            backgroundColor: params.row.approvedForPayment ? '#dff0d8' : params.row.status == "Отложено" ? '#898989' : 'inherit', // Зеленый цвет для согласованного статуса
+            // margin: '8px',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          {params.row.approvedForPayment ? (
+            'Согласовано'
+          ) :  ( params.row.status == "Отложено" ?(
+            <Select
+            value={params.value || ''}
+            onChange={(event: SelectChangeEvent) =>
+              handleApprovalChange(params.id as number, 'soglOplata', event.target.value)
+            }
+            displayEmpty
+            sx={{ width: '100%', fontSize: 14 }}
+          >
+            <MenuItem value="" disabled>
+              Отложено
+            </MenuItem>
+            <MenuItem value="Да">Да</MenuItem>
+            <MenuItem value="Нет">Нет</MenuItem>
+            <MenuItem value="Отложить">Отложить</MenuItem>
+          </Select>
+          ) : (
+            <Select
+            value={params.value || ''}
+            onChange={(event: SelectChangeEvent) =>
+              handleApprovalChange(params.id as number, 'soglOplata', event.target.value)
+            }
+            displayEmpty
+            sx={{ width: '100%', fontSize: 14 }}
+          >
+            <MenuItem value="" disabled>
+              Выбрать значение
+            </MenuItem>
+            <MenuItem value="Да">Да</MenuItem>
+            <MenuItem value="Нет">Нет</MenuItem>
+            <MenuItem value="Отложить">Отложить</MenuItem>
+          </Select>
+          )
+          
+          )}
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} style={{ padding: '20px' }}>
-      <Typography variant="h5" gutterBottom style={{ fontWeight: 'bold', marginBottom: '20px' }}>
-        Регистрация запроса
+    <Box
+      sx={{
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: 2,
+        backgroundColor: '#f5f5f7',
+        boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)',
+      }}
+    >
+      <Navbar />
+      <Typography variant="h5" component="h2" sx={{ marginBottom: 2 }}>
+        Таблица заявок
       </Typography>
-
-      <div style={{ marginBottom: '20px' }}>
-        <FilterSelect
-          value={filterKZakazu}
-          onChange={(e) => {
-            setFilterKZakazu(e.target.value as string);
-            handleFilterChange();
+      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+        <DataGrid
+          rows={rows}
+          columns={columns}
+          pageSize={5}
+          rowsPerPageOptions={[5]}
+          localeText={ruRU.components.MuiDataGrid.defaultProps.localeText}
+          experimentalFeatures={{ newEditingApi: true }}
+          processRowUpdate={handleCellEditCommit}
+          onProcessRowUpdateError={(error) => {
+            console.error("Ошибка при обновлении строки:", error);
+            // Здесь можно добавить уведомление для пользователя об ошибке
           }}
-          displayEmpty
-        >
-          <MenuItem value="">Все статусы к заказу</MenuItem>
-          <MenuItem value="Да">Да</MenuItem>
-          <MenuItem value="Нет">Нет</MenuItem>
-          <MenuItem value="Отложить">Отложить</MenuItem>
-        </FilterSelect>
-
-        <FilterSelect
-          value={filterPokupku}
-          onChange={(e) => {
-            setFilterPokupku(e.target.value as string);
-            handleFilterChange();
+          sx={{
+            '& .MuiDataGrid-root': {
+              borderRadius: '8px',
+              border: 'none',
+              boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.15)',
+            },
+            '& .MuiDataGrid-columnHeaders': {
+              backgroundColor: '#f0f0f0',
+              color: '#333',
+              fontWeight: 'bold',
+            },
+            '& .MuiDataGrid-cell': {
+              borderBottom: '1px solid #e0e0e0',
+              padding: '8px 16px', // Уменьшенные отступы для оптимального отображения
+              fontSize: '14px', // Размер текста для улучшенного восприятия
+            },
+            '& .MuiDataGrid-row': {
+              // maxHeight: '60px', // Высота строки для улучшенного отображения
+            },
+            '& .MuiDataGrid-row:hover': {
+              backgroundColor: '#e9f7ff',
+            },
+            '& .MuiDataGrid-footerContainer': {
+              backgroundColor: '#f0f0f0',
+            },
           }}
-          displayEmpty
-        >
-          <MenuItem value="">Все статусы покупки</MenuItem>
-          <MenuItem value="Да">Да</MenuItem>
-          <MenuItem value="Нет">Нет</MenuItem>
-          <MenuItem value="Отложить">Отложить</MenuItem>
-        </FilterSelect>
-      </div>
-
-      <TableContainer component={Paper} style={{ boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <StyledTableCell>№</StyledTableCell>
-              <StyledTableCell>Кто</StyledTableCell>
-              <StyledTableCell>Что</StyledTableCell>
-              <StyledTableCell>Кол</StyledTableCell>
-              <StyledTableCell>Зачем</StyledTableCell>
-              <StyledTableCell>Согласовать к заказу</StyledTableCell>
-              <StyledTableCell>Счет №</StyledTableCell>
-              <StyledTableCell>Сумма</StyledTableCell>
-              <StyledTableCell>Согласовать покупку</StyledTableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredData.map((row) => (
-              <StyledTableRow
-                key={row.id}
-                status={row.soglasovatKZakazu} // Используем значение для подсветки строки
-              >
-                <TableCell>{row.id}</TableCell>
-                <TableCell>{row.kto}</TableCell>
-                <TableCell>{row.chto}</TableCell>
-                <TableCell>{row.kol}</TableCell>
-                <TableCell>{row.zachem}</TableCell>
-                <TableCell>
-                  <Controller
-                    name={`soglasovatKZakazu_${row.id}`}
-                    control={control}
-                    defaultValue={row.soglasovatKZakazu}
-                    render={({ field }) => (
-                      <StyledSelect {...field} variant="outlined">
-                        <MenuItem value="Да">Да</MenuItem>
-                        <MenuItem value="Отложить">Отложить</MenuItem>
-                        <MenuItem value="Нет">Нет</MenuItem>
-                      </StyledSelect>
-                    )}
-                  />
-                </TableCell>
-                <TableCell>{row.schetNomer}</TableCell>
-                <TableCell>{row.summa}</TableCell>
-                <TableCell>
-                  <Controller
-                    name={`soglasovatPokupku_${row.id}`}
-                    control={control}
-                    defaultValue={row.soglasovatPokupku}
-                    render={({ field }) => (
-                      <StyledSelect {...field} variant="outlined">
-                        <MenuItem value="Да">Да</MenuItem>
-                        <MenuItem value="Нет">Нет</MenuItem>
-                        <MenuItem value="Отложить">Отложить</MenuItem>
-                      </StyledSelect>
-                    )}
-                  />
-                </TableCell>
-              </StyledTableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <SubmitButton type="submit">Отправить</SubmitButton>
-    </form>
+        />
+      </Box>
+    </Box>
   );
 };
 
