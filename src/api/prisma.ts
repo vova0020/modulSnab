@@ -215,8 +215,8 @@ export default class prismaInteraction {
       const requestData = await prisma.request.findMany({
         where: {
 
-             approvedForPurchase: true , // Условие для approvedForPurchase равного false (Согласование к закупке)
-           
+          approvedForPurchase: true, // Условие для approvedForPurchase равного false (Согласование к закупке)
+
         },
         select: {
           id: true,
@@ -270,7 +270,7 @@ export default class prismaInteraction {
           },
           otdel: true,
           sector: true,
-          
+
         },
       });
 
@@ -282,19 +282,102 @@ export default class prismaInteraction {
       await prisma.$disconnect();
     }
   }
+
+
+
+  async getCabinet(requestId: number) {
+    try {
+
+        const requestData = await prisma.request.findMany({
+          where: { creatorId: requestId },
+          include: {
+            status: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            // items: {
+            //   select: {
+            //     id: true,
+            //     item: true,
+            //     quantity: true,
+            //     amount: true,
+            //     unitMeasurement: true,
+            //   },
+            // },
+            // creator: {
+            //   select: {
+            //     firstName: true,
+            //     lastName: true,
+            //   },
+            // },
+            // otdel: true,
+            // sector: true,
+  
+          },
+        })
+
+      return requestData;
+    } catch (error) {
+      console.error("Ошибка при получении заявок пользователя:", error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+
+  }
+
+
+
   async putRequestSnabData(id: number, statusPut: number) {
     try {
       // console.log(requestId);
 
-        const requestUpdate = await prisma.request.update({
-          where: { id: Number(id) },
-          data: {
-            status: {
-              connect: { id: statusPut } // Связываем новый статус с заявкой
-            },
+      const requestUpdate = await prisma.request.update({
+        where: { id: Number(id) },
+        data: {
+          status: {
+            connect: { id: statusPut } // Связываем новый статус с заявкой
           },
-        });
-    
+        },
+      });
+
+
+      return requestUpdate;
+    } catch (error) {
+      console.error('Ошибка при получении списка заявок:', error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+  async putRequestSnab(requestId: number, updatedData: number) {
+    try {
+      console.log(updatedData);
+
+      const requestUpdate = await prisma.request.update({
+        where: { id: Number(requestId) },
+        data: {
+          invoiceNumber: updatedData.invoiceNumber,
+          additionalComment: updatedData.comment,
+          status: {
+            connect: { id: 5 } // Связываем статус (согласование к оплате) с заявкой
+          },
+        },
+      });
+      const requestUpdate2 = await prisma.requestItem.update({
+        where: { id: Number(updatedData.itemsId) },
+        data: {
+          provider: updatedData.provider,
+          supplierName1C: updatedData.itemName1C,
+          supplierName: updatedData.itemNameProvider,
+          amount: updatedData.amount,
+          deliveryDeadline: new Date(updatedData.deliveryDate).toISOString()
+
+        },
+      });
+
 
       return requestUpdate;
     } catch (error) {
@@ -311,7 +394,7 @@ export default class prismaInteraction {
 
   async updateRequest(id: number, data: any) {
     try {
-      
+
 
       if (data.soglZakaz == 'Да') {
         const requestUpdate = await prisma.request.update({
@@ -354,7 +437,7 @@ export default class prismaInteraction {
           data: {
             approvedForPayment: true,
             status: {
-              connect: { id: 3 } // Связываем новый статус с заявкой
+              connect: { id: 6 } // Связываем новый статус с заявкой
             },
           },
         });
@@ -433,16 +516,16 @@ export default class prismaInteraction {
 
         },
       });
-     
+
 
       // Обновление itemsQuantity, invoiceNumber и itemsAmount при наличии в запросе
 
       const requestUpdate = await prisma.requestItem.update({
         where: { id: Number(data.updateData.itemsId[0]) },
         data: {
-          item: data.updateData.itemsName[0] ,
-          quantity: data.updateData.itemsQuantity,
-          amount: data.updateData.itemsAmount[0] ,
+          item: data.updateData.itemsName[0],
+          quantity: data.updateData.itemsQuantity[0],
+          amount: data.updateData.itemsAmount[0],
 
         },
       });
@@ -461,35 +544,35 @@ export default class prismaInteraction {
 
   async findUserByLogin(login: string) {
     return await prisma.user.findUnique({
-        where: { login },
+      where: { login },
     });
 
-}
-
-async createUser(data: {firstName: string,  lastName: string, login: string; password: string; role: string;  }) {
-
-  // Проверка, существует ли пользователь с таким логином
-  const existingUser = await prisma.user.findUnique({
-      where: { login: data.login }, // Проверяем по полю login
-  });
-
-  if (existingUser) {
-      throw new Error('USER_EXISTS'); // Меняем текст ошибки на ключевое значение
   }
 
-  // Сохранение нового пользователя
-  const newUser = await prisma.user.create({
-      data: {
-          firstName: data.firstName, // Используем логин из переданных данных
-          lastName: data.lastName, // Используем логин из переданных данных
-          login: data.login, // Используем логин из переданных данных
-          password: data.password, // Используем хэшированный пароль
-          role: data.role, // Используем роль
-       },
-  });
+  async createUser(data: { firstName: string, lastName: string, login: string; password: string; role: string; }) {
 
-  return newUser; // Возвращаем созданного пользователя
-}
+    // Проверка, существует ли пользователь с таким логином
+    const existingUser = await prisma.user.findUnique({
+      where: { login: data.login }, // Проверяем по полю login
+    });
+
+    if (existingUser) {
+      throw new Error('USER_EXISTS'); // Меняем текст ошибки на ключевое значение
+    }
+
+    // Сохранение нового пользователя
+    const newUser = await prisma.user.create({
+      data: {
+        firstName: data.firstName, // Используем логин из переданных данных
+        lastName: data.lastName, // Используем логин из переданных данных
+        login: data.login, // Используем логин из переданных данных
+        password: data.password, // Используем хэшированный пароль
+        role: data.role, // Используем роль
+      },
+    });
+
+    return newUser; // Возвращаем созданного пользователя
+  }
 
 
 

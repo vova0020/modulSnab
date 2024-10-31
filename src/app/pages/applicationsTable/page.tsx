@@ -24,20 +24,32 @@ type OrderRow = {
 };
 
 const TablePage = () => {
+const soglasStatus = 'Согласовано'
+const otlojStatus = 'Отложено'
+const neSoglasStatus = 'Не согласовано'
+
   const [rows, setRows] = useState<OrderRow[]>([]);
+  const fetchData = async () => {
+    try {
+      const response = await axios.get('/api/aplicationsTable');
+      const sortedData = response.data.sort((a, b) => a.id - b.id); // Сортировка по возрастанию поля 'id'
+      setRows(sortedData);
+    } catch (error) {
+      console.error('Ошибка при загрузке данных:', error);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get('/api/aplicationsTable');
-        setRows(response.data);
-      } catch (error) {
-        console.error('Ошибка при загрузке данных:', error);
-      }
-    };
-
     fetchData();
+    const intervalId = setInterval(() => {
+      fetchData(); // Обновляем данные
+    }, 4000); // Обновляем каждые 5 секунд
+
+    // Очищаем интервал при размонтировании компонента
+    return () => clearInterval(intervalId);
+   
   }, []);
+  
 
   const handleApprovalChange = async (id: number, field: string, value: string) => {
     // Обновляем состояние локально
@@ -46,11 +58,12 @@ const TablePage = () => {
         row.id === id ? { ...row, [field]: value } : row
       )
     );
-  
+
     // Отправляем данные на сервер
     try {
       await axios.put('/api/aplicationsTable', { id, field, value });
       console.log('Данные успешно обновлены');
+      fetchData()
     } catch (error) {
       console.error('Ошибка при обновлении данных:', error);
       // Здесь можно добавить уведомление для пользователя о том, что произошла ошибка
@@ -58,39 +71,34 @@ const TablePage = () => {
   };
 
   // Обработчик для изменений в других ячейках (например, itemsQuantity, itemsAmount и invoiceNumber)
- const handleCellEditCommit = async (params) => {
-  console.log( params); // Проверка вызова функции
+  const handleCellEditCommit = async (params) => {
+    console.log(params); // Проверка вызова функции
 
 
-  const updateData = params
+    const updateData = params
 
-  try {
-    // Отправляем PUT-запрос для обновления значения в базе данных
-    const response = await axios.put('/api/tableUpdate', { updateData });
-    console.log('Ответ от сервера:', response.data); // Проверка ответа от сервера
+    try {
+      // Отправляем PUT-запрос для обновления значения в базе данных
+      const response = await axios.put('/api/tableUpdate', { updateData });
+      console.log('Ответ от сервера:', response.data); // Проверка ответа от сервера
 
-    // // Обновляем локальное состояние после успешного запроса
-    // setRows((prevRows) =>
-    //   prevRows.map((row) =>
-    //     row.id === id ? { ...row, [field]: value } : row
-    //   )
-    // );
 
-    console.log(`Поле ${params.id} успешно обновлено`);
-  } catch (error) {
-    console.error('Ошибка при обновлении поля:', error);
-  }
-};
+      console.log(`Поле ${params.id} успешно обновлено`);
+      fetchData()
+    } catch (error) {
+      console.error('Ошибка при обновлении поля:', error);
+    }
+  };
 
-  
-  
+
+
 
   const columns: GridColDef[] = [
-    { field: 'id', headerName: '№',  width: 10 },
-    { field: 'creator', headerName: 'Кто',  width: 140 },
+    { field: 'id', headerName: '№', width: 10 },
+    { field: 'creator', headerName: 'Кто', width: 140 },
     { field: 'itemsName', headerName: 'Что', editable: true, width: 150 },
     { field: 'itemsQuantity', headerName: 'Кол', type: 'number', editable: true, width: 150 },
-    { field: 'orderReason', headerName: 'Зачем',  width: 250 },
+    { field: 'orderReason', headerName: 'Зачем', width: 250 },
     {
       field: 'soglZakaz',
       headerName: 'Согласовать к заказу',
@@ -98,7 +106,12 @@ const TablePage = () => {
       renderCell: (params: GridRenderCellParams) => (
         <div
           style={{
-            backgroundColor: params.row.approvedForPurchase ? '#dff0d8' : params.row.status == "Отложено" ? '#898989' : 'inherit', // Зеленый цвет для согласованного статуса
+            backgroundColor:
+              params.row.approvedForPurchase ? '#81ff00' :
+                params.row.status === otlojStatus ? '#ffa700' :
+                  params.row.status === neSoglasStatus ? '#4e4e4e' :
+                    'inherit',
+            // Зеленый цвет для согласованного статуса
             // margin: '8px',
             borderRadius: '4px',
             display: 'flex',
@@ -107,47 +120,63 @@ const TablePage = () => {
           }}
         >
           {params.row.approvedForPurchase ? (
-            'Согласовано'
-          ) :  ( params.row.status == "Отложено" ?(
+            soglasStatus
+          ) : (params.row.status == otlojStatus ? (
             <Select
-            value={params.value || ''}
-            onChange={(event: SelectChangeEvent) =>
-              handleApprovalChange(params.id as number, 'soglZakaz', event.target.value)
-            }
-            displayEmpty
-            sx={{ width: '100%', fontSize: 14 }}
-          >
-            <MenuItem value="" disabled>
-              Отложено
-            </MenuItem>
-            <MenuItem value="Да">Да</MenuItem>
-            <MenuItem value="Нет">Нет</MenuItem>
-            <MenuItem value="Отложить">Отложить</MenuItem>
-          </Select>
+              value={params.value || ''}
+              onChange={(event: SelectChangeEvent) =>
+                handleApprovalChange(params.id as number, 'soglZakaz', event.target.value)
+              }
+              displayEmpty
+              sx={{ width: '100%', fontSize: 14 }}
+            >
+              <MenuItem value="" disabled>
+                {otlojStatus}
+              </MenuItem>
+              <MenuItem value="Да">Да</MenuItem>
+              <MenuItem value="Нет">Нет</MenuItem>
+              <MenuItem value="Отложить">Отложить</MenuItem>
+            </Select>
+          ) : (params.row.status == neSoglasStatus ? (
+            <Select
+              value={params.value || ''}
+              onChange={(event: SelectChangeEvent) =>
+                handleApprovalChange(params.id as number, 'soglOplata', event.target.value)
+              }
+              displayEmpty
+              sx={{ width: '100%', fontSize: 14 }}
+            >
+              <MenuItem value="" disabled>
+                {neSoglasStatus}
+              </MenuItem>
+              <MenuItem value="Да">Да</MenuItem>
+              <MenuItem value="Нет">Нет</MenuItem>
+              <MenuItem value="Отложить">Отложить</MenuItem>
+            </Select>
           ) : (
             <Select
-            value={params.value || ''}
-            onChange={(event: SelectChangeEvent) =>
-              handleApprovalChange(params.id as number, 'soglZakaz', event.target.value)
-            }
-            displayEmpty
-            sx={{ width: '100%', fontSize: 14 }}
-          >
-            <MenuItem value="" disabled>
-              Выбрать значение
-            </MenuItem>
-            <MenuItem value="Да">Да</MenuItem>
-            <MenuItem value="Нет">Нет</MenuItem>
-            <MenuItem value="Отложить">Отложить</MenuItem>
-          </Select>
-          )
-          
+              value={params.value || ''}
+              onChange={(event: SelectChangeEvent) =>
+                handleApprovalChange(params.id as number, 'soglZakaz', event.target.value)
+              }
+              displayEmpty
+              sx={{ width: '100%', fontSize: 14 }}
+            >
+              <MenuItem value="" disabled>
+                Выбрать значение
+              </MenuItem>
+              <MenuItem value="Да">Да</MenuItem>
+              <MenuItem value="Нет">Нет</MenuItem>
+              <MenuItem value="Отложить">Отложить</MenuItem>
+            </Select>
+          ))
+
           )}
         </div>
       ),
     },
-    
-    
+
+
     { field: 'invoiceNumber', headerName: 'Счет №', editable: true, width: 150 },
     { field: 'itemsAmount', headerName: 'Сумма', editable: true, width: 150 },
     {
@@ -157,7 +186,11 @@ const TablePage = () => {
       renderCell: (params: GridRenderCellParams) => (
         <div
           style={{
-            backgroundColor: params.row.approvedForPayment ? '#dff0d8' : params.row.status == "Отложено" ? '#898989' : 'inherit', // Зеленый цвет для согласованного статуса
+            backgroundColor:
+              params.row.approvedForPayment ? '#81ff00' :
+                params.row.status === otlojStatus ? '#ffa700' :
+                  params.row.status === neSoglasStatus ? '#4e4e4e' :
+                    'inherit', // Зеленый цвет для согласованного статуса
             // margin: '8px',
             borderRadius: '4px',
             display: 'flex',
@@ -166,41 +199,57 @@ const TablePage = () => {
           }}
         >
           {params.row.approvedForPayment ? (
-            'Согласовано'
-          ) :  ( params.row.status == "Отложено" ?(
+            soglasStatus
+          ) : (params.row.status == otlojStatus ? (
             <Select
-            value={params.value || ''}
-            onChange={(event: SelectChangeEvent) =>
-              handleApprovalChange(params.id as number, 'soglOplata', event.target.value)
-            }
-            displayEmpty
-            sx={{ width: '100%', fontSize: 14 }}
-          >
-            <MenuItem value="" disabled>
-              Отложено
-            </MenuItem>
-            <MenuItem value="Да">Да</MenuItem>
-            <MenuItem value="Нет">Нет</MenuItem>
-            <MenuItem value="Отложить">Отложить</MenuItem>
-          </Select>
+              value={params.value || ''}
+              onChange={(event: SelectChangeEvent) =>
+                handleApprovalChange(params.id as number, 'soglOplata', event.target.value)
+              }
+              displayEmpty
+              sx={{ width: '100%', fontSize: 14 }}
+            >
+              <MenuItem value="" disabled>
+                {otlojStatus}
+              </MenuItem>
+              <MenuItem value="Да">Да</MenuItem>
+              <MenuItem value="Нет">Нет</MenuItem>
+              <MenuItem value="Отложить">Отложить</MenuItem>
+            </Select>
+          ) : (params.row.status == neSoglasStatus ? (
+            <Select
+              value={params.value || ''}
+              onChange={(event: SelectChangeEvent) =>
+                handleApprovalChange(params.id as number, 'soglOplata', event.target.value)
+              }
+              displayEmpty
+              sx={{ width: '100%', fontSize: 14 }}
+            >
+              <MenuItem value="" disabled>
+                {neSoglasStatus}
+              </MenuItem>
+              <MenuItem value="Да">Да</MenuItem>
+              <MenuItem value="Нет">Нет</MenuItem>
+              <MenuItem value="Отложить">Отложить</MenuItem>
+            </Select>
           ) : (
             <Select
-            value={params.value || ''}
-            onChange={(event: SelectChangeEvent) =>
-              handleApprovalChange(params.id as number, 'soglOplata', event.target.value)
-            }
-            displayEmpty
-            sx={{ width: '100%', fontSize: 14 }}
-          >
-            <MenuItem value="" disabled>
-              Выбрать значение
-            </MenuItem>
-            <MenuItem value="Да">Да</MenuItem>
-            <MenuItem value="Нет">Нет</MenuItem>
-            <MenuItem value="Отложить">Отложить</MenuItem>
-          </Select>
-          )
-          
+              value={params.value || ''}
+              onChange={(event: SelectChangeEvent) =>
+                handleApprovalChange(params.id as number, 'soglOplata', event.target.value)
+              }
+              displayEmpty
+              sx={{ width: '100%', fontSize: 14 }}
+            >
+              <MenuItem value="" disabled>
+                Выбрать значение
+              </MenuItem>
+              <MenuItem value="Да">Да</MenuItem>
+              <MenuItem value="Нет">Нет</MenuItem>
+              <MenuItem value="Отложить">Отложить</MenuItem>
+            </Select>
+          ))
+
           )}
         </div>
       ),
@@ -231,6 +280,7 @@ const TablePage = () => {
           localeText={ruRU.components.MuiDataGrid.defaultProps.localeText}
           experimentalFeatures={{ newEditingApi: true }}
           processRowUpdate={handleCellEditCommit}
+          getRowId={(row) => row.id} 
           onProcessRowUpdateError={(error) => {
             console.error("Ошибка при обновлении строки:", error);
             // Здесь можно добавить уведомление для пользователя об ошибке

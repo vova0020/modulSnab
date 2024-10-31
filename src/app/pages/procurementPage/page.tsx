@@ -20,6 +20,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { yellow } from '@mui/material/colors';
 import ApplicationPage from '@/app/components/APPlicationPage';
 import axios from 'axios';
+import Navbar from '@/app/components/navbar';
 
 // Типы данных заявок
 type Request = {
@@ -127,6 +128,7 @@ const RequestsPage: React.FC = () => {
     inProgress: Request[];
     onApproval: Request[];
     approved: Request[];
+    oplachen: Request[];
     delivery: Request[];
     clarification: Request[];
     completed: Request[];
@@ -135,6 +137,7 @@ const RequestsPage: React.FC = () => {
     inProgress: [],
     onApproval: [],
     approved: [],
+    oplachen: [],
     delivery: [],
     clarification: [],
     completed: [],
@@ -144,51 +147,62 @@ const RequestsPage: React.FC = () => {
   const accordionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Получение данных о заявках с сервера
+  const fetchRequests = async () => {
+    try {
+      const response = await axios.get('/api/getSnab'); // Укажите реальный URL
+      const data: Request[] = response.data; // Используем response.data вместо response.json()
+      console.log('Fetched data:', data); // Отладка данных с сервера
+
+      // Сортировка и распределение заявок по статусам
+      const newRequests = data
+        .filter(req => req.status.name === 'Согласован к закупке')
+        .sort((a, b) => a.id - b.id);
+      const inProgress = data
+        .filter(req => req.status.name === 'В работе')
+        .sort((a, b) => a.id - b.id);
+      const onApproval = data
+        .filter(req => req.status.name === 'Согласование к оплате')
+        .sort((a, b) => a.id - b.id);
+      const approved = data
+        .filter(req => req.status.name === 'Согласован к оплате')
+        .sort((a, b) => a.id - b.id);
+      const oplachen = data
+        .filter(req => req.status.name === 'Оплачен')
+        .sort((a, b) => a.id - b.id);
+      const delivery = data
+        .filter(req => req.status.name === 'Доставка')
+        .sort((a, b) => a.id - b.id);
+      const clarification = data
+        .filter(req => req.status.name === 'На уточнении')
+        .sort((a, b) => a.id - b.id);
+      const completed = data
+        .filter(req => req.status.name === 'Завершена')
+        .sort((a, b) => a.id - b.id);
+
+      setRequestsData({
+        newRequests,
+        inProgress,
+        onApproval,
+        approved,
+        oplachen,
+        delivery,
+        clarification,
+        completed,
+      });
+    } catch (error) {
+      console.error('Ошибка при загрузке заявок:', error);
+    }
+  };
+
   useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const response = await axios.get('/api/getSnab'); // Укажите реальный URL
-        const data: Request[] = response.data; // Используем response.data вместо response.json()
-        console.log('Fetched data:', data); // Отладка данных с сервера
-  
-        // Сортировка и распределение заявок по статусам
-        const newRequests = data
-          .filter(req => req.status.name === 'Согласован к закупке')
-          .sort((a, b) => a.id - b.id);
-        const inProgress = data
-          .filter(req => req.status.name === 'В работе')
-          .sort((a, b) => a.id - b.id);
-        const onApproval = data
-          .filter(req => req.status.name === 'Согласование к оплате')
-          .sort((a, b) => a.id - b.id);
-        const approved = data
-          .filter(req => req.status.name === 'Согласован к оплате')
-          .sort((a, b) => a.id - b.id);
-        const delivery = data
-          .filter(req => req.status.name === 'Доставка')
-          .sort((a, b) => a.id - b.id);
-        const clarification = data
-          .filter(req => req.status.name === 'На уточнении')
-          .sort((a, b) => a.id - b.id);
-        const completed = data
-          .filter(req => req.status.name === 'Завершена')
-          .sort((a, b) => a.id - b.id);
-  
-        setRequestsData({
-          newRequests,
-          inProgress,
-          onApproval,
-          approved,
-          delivery,
-          clarification,
-          completed,
-        });
-      } catch (error) {
-        console.error('Ошибка при загрузке заявок:', error);
-      }
-    };
-  
     fetchRequests();
+    const intervalId = setInterval(() => {
+      fetchRequests(); // Обновляем данные
+    }, 4000); // Обновляем каждые 5 секунд
+
+    // Очищаем интервал при размонтировании компонента
+    return () => clearInterval(intervalId);
+   
   }, []);
   
   
@@ -198,7 +212,8 @@ const RequestsPage: React.FC = () => {
     setDrawerOpen(true);
   };
 
-  return (
+  return (<div>
+    <Navbar />
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Container sx={{ mt: 4 }}>
@@ -274,6 +289,26 @@ const RequestsPage: React.FC = () => {
               onRequestClick={handleRequestClick}
             />
           </Grid>
+          <Grid item xs={12} md={6}>
+            <RequestBox
+              title="Оплачен"
+              requests={requestsData.oplachen}
+              highlightedId={highlightedRequestId}
+              expanded={openAccordionIndex === 6}
+              onAccordionToggle={() => setOpenAccordionIndex(openAccordionIndex === 6 ? null : 6)}
+              refProp={(el) => (accordionRefs.current[6] = el)}
+              onRequestClick={handleRequestClick}
+            />
+            <RequestBox
+              title="Доставка"
+              requests={requestsData.delivery}
+              highlightedId={highlightedRequestId}
+              expanded={openAccordionIndex === 7}
+              onAccordionToggle={() => setOpenAccordionIndex(openAccordionIndex === 7 ? null : 7)}
+              refProp={(el) => (accordionRefs.current[7] = el)}
+              onRequestClick={handleRequestClick}
+            />
+          </Grid>
         </Grid>
 
         <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
@@ -281,6 +316,8 @@ const RequestsPage: React.FC = () => {
         </Drawer>
       </Container>
     </ThemeProvider>
+  </div>
+  
   );
 };
 

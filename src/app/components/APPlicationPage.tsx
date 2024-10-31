@@ -35,13 +35,81 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
   const [inWork, setInWork] = useState(false);
   const [requestData, setRequestData] = useState<Request | null>(null)
 
+  const [formData, setFormData] = useState({
+    itemsId: 0,
+    provider: '',
+    itemName1C: '',
+    itemNameProvider: '',
+    invoiceNumber: '',
+    amount: '',
+    deliveryDate: '',
+    comment: '',
+  });
+  const fetchRequests = async () => {
+    try {
+      const response = await axios.get('/api/getSnabData', {
+        params: { requestId }, // передаем requestId через params
+      });
+      const data: Request = response.data; // Получаем данные напрямую из response.data
+      setRequestData(data)
+
+    } catch (error) {
+      console.error('Ошибка при загрузке заявок:', error);
+    }
+  };
+  useEffect(() => {
+    
+
+    fetchRequests();
+  }, [requestId]); // Зависимость от requestId, если он может измениться
+
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+      
+    }));
+  };
+
+  const handleSubmit = async () => {
+    const updatedData = {
+      ...formData,
+      amount: parseFloat(formData.amount), // Преобразуем в число при отправке
+      itemsId: requestData?.items[0].id
+    };
+    try {
+      // console.log(formData);
+      
+      const response = await axios.put('/api/putSnab',{requestId, updatedData});
+      if (response.status === 200) {
+        alert('Данные успешно отправлены на сервер!');
+        fetchRequests()
+      }
+    } catch (error) {
+      console.error('Ошибка отправки данных:', error);
+      alert('Ошибка отправки данных');
+    }
+  };
+
 
   // Название кнопок
   const workButton = 'В РАБОТУ'
   const correctionButton = 'ОТПРАВИТЬ НА УТОЧНЕНИЕ'
+  const ButtonMoneyOK = 'ОПЛАЧЕН'
+  const buttonDostavka = 'ДОСТАВКА'
+  const buttonComplete = 'ЗАВЕРШИТЬ'
+  // const statusComplete = 'Завершить'
+
+  const statusWork = 'В работе'
+  const statusMoney = 'Согласован к оплате'
+  const statusMoneyOk = 'Оплачен'
+  const statusDostavka = 'Доставка'
+  const statusComplete = 'Завершена'
 
   useEffect(() => {
-    // console.log(requestData);
+    console.log(requestData?.items[0].id || '...гружу');
   }, [requestData])
 
 
@@ -54,15 +122,16 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
 
   const handleInWorkClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
     const buttonText = (event.currentTarget as HTMLButtonElement).innerText;
-    // setInWork(true); // Скрываем кнопки и показываем форму
+    setInWork(true); // Скрываем кнопки и показываем форму
     const id: number = requestData?.id || 0;
-   
-  
+
+
     if (buttonText === workButton) {
       try {
         const statusPut: number = 4; // статус в работу
         await axios.put('/api/getSnabData', { id, statusPut });
         console.log('Данные успешно обновлены');
+        fetchRequests()
       } catch (error) {
         console.error('Ошибка при обновлении данных:', error);
       }
@@ -71,29 +140,40 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
         const statusPut: number = 10; // статус на уточнении
         await axios.put('/api/getSnabData', { id, statusPut });
         console.log('Данные успешно обновлены');
+        fetchRequests()
+      } catch (error) {
+        console.error('Ошибка при обновлении данных:', error);
+      }
+    }else if (buttonText === ButtonMoneyOK) {
+      try {
+        const statusPut: number = 7; // статус на уточнении
+        await axios.put('/api/getSnabData', { id, statusPut });
+        console.log('Данные успешно обновлены');
+        fetchRequests()
+      } catch (error) {
+        console.error('Ошибка при обновлении данных:', error);
+      }
+    }else if (buttonText === buttonDostavka) {
+      try {
+        const statusPut: number = 8; // статус на уточнении
+        await axios.put('/api/getSnabData', { id, statusPut });
+        console.log('Данные успешно обновлены');
+        fetchRequests()
+      } catch (error) {
+        console.error('Ошибка при обновлении данных:', error);
+      }
+    }else if (buttonText === buttonComplete) {
+      try {
+        const statusPut: number = 9; // статус на уточнении
+        await axios.put('/api/getSnabData', { id, statusPut });
+        console.log('Данные успешно обновлены');
+        fetchRequests()
       } catch (error) {
         console.error('Ошибка при обновлении данных:', error);
       }
     }
   };
-  
 
-  useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const response = await axios.get('/api/getSnabData', {
-          params: { requestId }, // передаем requestId через params
-        });
-        const data: Request = response.data; // Получаем данные напрямую из response.data
-        setRequestData(data)
-
-      } catch (error) {
-        console.error('Ошибка при загрузке заявок:', error);
-      }
-    };
-
-    fetchRequests();
-  }, [requestId]); // Зависимость от requestId, если он может измениться
 
 
 
@@ -328,7 +408,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
       </Box>
 
       {/* Кнопки */}
-      {!inWork && (
+      {(!inWork && requestData?.status.name === statusWork) && (
         <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
           <Button variant="contained" color="primary" onClick={handleInWorkClick} sx={{ minWidth: '150px' }}>
             {workButton}
@@ -340,7 +420,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
       )}
 
       {/* Форма после нажатия на "В работу" */}
-      {inWork && (
+      {(inWork && requestData?.status.name == statusWork) &&  (
         <Box
           sx={{
             display: 'flex',
@@ -359,19 +439,48 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
             Форма для обработки заявки
           </Typography>
 
-          <TextField label="Поставщик" fullWidth />
-          <TextField label="Наименование из 1С" fullWidth />
-          <TextField label="Наименование у поставщика" fullWidth />
-          <TextField label="Номер счета / КП" fullWidth />
-          <TextField label="Сумма" fullWidth />
-          <TextField label="Срок поставки" type="date" InputLabelProps={{ shrink: true }} fullWidth />
-          <TextField label="Комментарий" multiline rows={4} fullWidth />
+          <TextField label="Поставщик" name="provider" fullWidth value={formData.provider} onChange={handleChange} />
+          <TextField label="Наименование из 1С" name="itemName1C" fullWidth value={formData.itemName1C} onChange={handleChange} />
+          <TextField label="Наименование у поставщика" name="itemNameProvider" fullWidth value={formData.itemNameProvider} onChange={handleChange} />
+          <TextField label="Номер счета / КП" name="invoiceNumber" fullWidth value={formData.invoiceNumber} onChange={handleChange} />
+          <TextField label="Сумма" name="amount" fullWidth value={formData.amount} onChange={handleChange} />
+          <TextField
+            label="Срок поставки"
+            name="deliveryDate"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+            value={formData.deliveryDate}
+            onChange={handleChange}
+          />
+          <TextField label="Комментарий" name="comment" multiline rows={4} fullWidth value={formData.comment} onChange={handleChange} />
 
-          <Button variant="contained" color="primary" sx={{ alignSelf: 'flex-end', minWidth: '200px' }}>
+          <Button variant="contained" color="primary" sx={{ alignSelf: 'flex-end', minWidth: '200px' }} onClick={handleSubmit}>
             Сохранить и отправить на согласование
           </Button>
         </Box>
       )}
+
+      {(requestData?.status.name === statusMoney)?(
+        <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+        <Button variant="contained" color="primary" onClick={handleInWorkClick} sx={{ minWidth: '150px' }}>
+          Оплачен
+        </Button>
+      </Box>
+      ):((requestData?.status.name === statusMoneyOk)?(
+        <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+        <Button variant="contained" color="primary" onClick={handleInWorkClick} sx={{ minWidth: '150px' }}>
+          Доставка
+        </Button>
+      </Box>
+      ):((requestData?.status.name === statusDostavka)&&(
+        <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+        <Button variant="contained" color="primary" onClick={handleInWorkClick} sx={{ minWidth: '150px' }}>
+        Завершить
+        </Button>
+      </Box>
+      )))}
+      
     </Box>
   );
 };

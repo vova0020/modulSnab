@@ -65,6 +65,9 @@ const Navbar: React.FC = () => {
         <Link href="/pages/createUsers" passHref>
           <Button color="inherit">Создание пользователя</Button>
         </Link>
+        <Link href="/pages/personalCabinet" passHref>
+          <Button color="inherit">Личный кабинет</Button>
+        </Link>
         {/* <Link href="/pages/createRequest" passHref>
           <Button color="inherit">Создание заявки</Button>
         </Link> */}

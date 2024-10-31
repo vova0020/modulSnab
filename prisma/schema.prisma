@@ -65,6 +65,7 @@ model RequestItem {
   quantity       Int? // Количество
   
   unitMeasurement String? // Еденица измерения
+  provider String? // Поставщик
   supplierName1C String? // Наименование из 1С
   supplierName   String? // Наименование у поставщика
 
