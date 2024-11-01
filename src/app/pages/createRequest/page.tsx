@@ -2,7 +2,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import { Container, TextField, Grid, MenuItem, Select, InputLabel, FormControl, Button, Typography, Box, IconButton, Alert, Snackbar } from '@mui/material';
+import { Container, TextField, Grid, MenuItem, Select, InputLabel, FormControl, Button, Typography, Box, IconButton, Alert, Snackbar, AlertTitle } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { format } from 'date-fns';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -10,12 +10,24 @@ import AddIcon from '@mui/icons-material/Add';
 import axios from 'axios';
 import Navbar from '@/app/components/navbar';
 import { jwtDecode } from 'jwt-decode';
+import { useForm } from 'react-hook-form';
 interface DecodedToken {
     role: string; // Предполагаем, что в токене есть поле 'role'
     firstName: string; // Предполагаем, что в токене есть поле 'sector'
     lastName: string; // Предполагаем, что в токене есть поле 'sector'
     id: number; // Предполагаем, что в токене есть поле 'sector'
 }
+
+type RegisterFormInputs = {
+    department: number;
+    sectors: number;
+    purpose: string;
+    subPurpose: string;
+    number: number;
+    unitMeasurement: string;
+};
+
+
 const RequestForm: React.FC = () => {
     // Данные которые из базы
     const currentDate = format(new Date(), 'dd.MM.yyyy');
@@ -37,6 +49,10 @@ const RequestForm: React.FC = () => {
     const [orders, setOrders] = useState<{ description: string; quantity: number }[]>([{ description: '', quantity: 0 }]);
 
     const [imageFile, setImageFile] = useState<File | null>(null);
+
+    const { register, formState: { errors }, watch, reset } = useForm<RegisterFormInputs>();
+
+
 
     // Обработчик для загрузки изображения
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,7 +127,7 @@ const RequestForm: React.FC = () => {
             axios.get('/api/createRequest')
                 .then(response => {
                     const requestData = response.data;
-                    console.log(requestData);
+                    // console.log(requestData);
                     if (requestData == null) {
                         setRequestNumber(0);
                     } else {
@@ -177,6 +193,28 @@ const RequestForm: React.FC = () => {
         setOrders(updatedOrders);
     };
 
+
+    const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
+
+    useEffect(() => {
+        // Проверка, заполнены ли все обязательные поля
+        const areAllFieldsFilled =
+            department &&
+            section &&
+            fullName &&
+            purpose &&
+            subPurpose &&
+            description &&
+            quantity &&
+            unitMeasurement &&
+            urgency;
+        setIsSubmitDisabled(!areAllFieldsFilled);
+    }, [department, section, fullName, purpose, subPurpose, description, quantity, unitMeasurement, urgency]);
+
+
+
+
+
     return (
         <div style={{ borderColor: 'black' }}>
             <Navbar />
@@ -219,6 +257,9 @@ const RequestForm: React.FC = () => {
                                 fullWidth
                                 id="department"
                                 label="Отдел"
+                                {...register("department", { required: "Укажите отдел" })}
+                                error={!!errors.department}
+                                helperText={errors.department?.message}
                                 // @ts-ignore
                                 onChange={(e) => setDepartment(e.target.value as number)}
                             >
@@ -536,7 +577,12 @@ const RequestForm: React.FC = () => {
                     </Grid>
                 </Box>)}
                 <Box mt={3} display="flex" justifyContent="center" alignItems="center">
-                    <Button variant="contained" endIcon={<SendIcon />} onClick={handleSubmit}>
+                    <Button
+                        variant="contained"
+                        endIcon={<SendIcon />}
+                        onClick={handleSubmit}
+                        disabled={isSubmitDisabled} // Кнопка отключена, если не заполнены обязательные поля
+                    >
                         Отправить на согласование
                     </Button>
                 </Box>
@@ -548,8 +594,9 @@ const RequestForm: React.FC = () => {
                     anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
                 >
                     {/*  @ts-ignore */}
-                    <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: '100%' }}>
-                        Данные успешно отправлены!
+                    <Alert onClose={handleCloseSnackbar} variant="filled" severity="success" sx={{ width: '100%' }}>
+                        <AlertTitle>Успешно</AlertTitle>
+                        Заявка зарегистрирована, статус заявки можно посмотреть в личном кабинете!
                     </Alert>
                 </Snackbar>
             </Container>

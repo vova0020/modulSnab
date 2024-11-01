@@ -1,5 +1,9 @@
+// aplicationsTable.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import prismaInteraction from '@/api/prisma';
+
+export const dynamic = 'force-dynamic'; // Указывает Next.js использовать динамическую обработку
 
 const prisma = new prismaInteraction();
 
@@ -23,7 +27,10 @@ export async function GET() {
             itemsAmount: request.items.map(item => item.amount),
         }));
 
-        return NextResponse.json(transformedData, { status: 200 });
+        return NextResponse.json(transformedData, {
+            status: 200,
+            headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate' },
+        });
     } catch (error) {
         console.error('Ошибка при создании Заявки:', error);
         return NextResponse.json({ message: 'Ошибка при создании Заявки' }, { status: 500 });
@@ -33,12 +40,14 @@ export async function GET() {
 // PUT-запрос для обновления данных
 export async function PUT(req: NextRequest) {
     try {
-        const { id, field, value } = await req.json(); // Извлекаем id, field и value из тела запроса
+        const { id, field, value } = await req.json();
 
-        // Обновляем запись в базе данных с помощью Prisma
         const updatedOrder = await prisma.updateRequest(id, { [field]: value });
 
-        return NextResponse.json(updatedOrder, { status: 200 });
+        return NextResponse.json(updatedOrder, {
+            status: 200,
+            headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate' },
+        });
     } catch (error) {
         console.error('Ошибка при обновлении Заявки:', error);
         return NextResponse.json({ message: 'Ошибка при обновлении Заявки' }, { status: 500 });

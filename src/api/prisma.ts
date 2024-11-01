@@ -229,6 +229,8 @@ export default class prismaInteraction {
 
 
   async getRequest() {
+    console.log('Работает prisma');
+    
     try {
       const requestData = await prisma.request.findMany({
         where: {
@@ -459,15 +461,15 @@ export default class prismaInteraction {
                 name: true,
               },
             },
-            // items: {
-            //   select: {
-            //     id: true,
-            //     item: true,
-            //     quantity: true,
-            //     amount: true,
-            //     unitMeasurement: true,
-            //   },
-            // },
+            items: {
+              select: {
+                id: true,
+                item: true,
+                quantity: true,
+                amount: true,
+                unitMeasurement: true,
+              },
+            },
             // creator: {
             //   select: {
             //     firstName: true,

@@ -1,6 +1,6 @@
 /* eslint-disable */
 // @ts-nocheck
-import React, { useState } from 'react'; 
+import React, { useState } from 'react';
 import {
     Card,
     CardContent,
@@ -59,13 +59,13 @@ const getStatusColor = (status: string) => {
     }
 };
 
-const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, status }) => {
+const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, status, item, quantity, unitMeasurement }) => {
     const isHighlight = status === 'На уточнении';
     const [isHovered, setIsHovered] = useState(false);
     const [openDialog, setOpenDialog] = useState(false);
     const [openQuestionDialog, setOpenQuestionDialog] = useState(false);
     const [question, setQuestion] = useState<string | null>(null);
-    const [answer, setAnswer] = useState<string>(''); 
+    const [answer, setAnswer] = useState<string>('');
     const [editData, setEditData] = useState<any>(null);
     const [openSnackbar, setOpenSnackbar] = useState(false);
 
@@ -104,12 +104,20 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, status 
             onMouseLeave={() => setIsHovered(false)}
         >
             <CardContent>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Заявка № {number}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                    Дата: {new Date(date).toLocaleDateString('ru-RU')}
-                </Typography>
+                <Box display="flex" flexDirection="column" mb={2}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            Заявка № {number}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Дата: {new Date(date).toLocaleDateString('ru-RU')}
+                        </Typography>
+
+                    </Box>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        Заказ -  {`${item}.  Количество - ${quantity} ${unitMeasurement}`}
+                    </Typography>
+                </Box>
                 <Box mt={1}>
                     <Chip
                         label={status}
@@ -122,6 +130,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, status 
                         }}
                     />
                 </Box>
+
                 {isHovered && isHighlight && (
                     <>
                         <IconButton
@@ -176,9 +185,9 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, status 
                 open={openSnackbar}
                 autoHideDuration={6000}
                 onClose={handleCloseSnackbar}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
             >
-                <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: '100%' }}>
+                <Alert onClose={handleCloseSnackbar} variant="filled" severity="success" sx={{ width: '100%' }}>
                     Данные успешно сохранены!
                 </Alert>
             </Snackbar>
@@ -201,7 +210,7 @@ async function fetchQuestionFromDatabase(requestId: string): Promise<string | nu
         params: { requestId },
     });
     console.log(response.data);
-    
+
     return response.data;
 }
 

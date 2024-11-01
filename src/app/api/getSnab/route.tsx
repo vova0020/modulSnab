@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prismaInteraction from '@/api/prisma';
 
 const prisma = new prismaInteraction();
+export const dynamic = 'force-dynamic'; // показывает что фаил должен динамический быть
 
 // GET-запрос для получения данных
 export async function GET() {

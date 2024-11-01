@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": " next start -p 3002",
+    "start": " next start -p 3000",
     "lint": "next lint",
     "seed": "ts-node --transpile-only prisma/seed.js"
   },
@@ -31,8 +31,7 @@
     "react": "^18",
     "react-dom": "^18",
     "react-hook-form": "^7.53.1",
-    "styled-components": "^6.1.13",
-    "swr": "^2.2.5"
+    "styled-components": "^6.1.13"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",

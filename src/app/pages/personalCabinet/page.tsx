@@ -40,6 +40,8 @@ const PersonalCabinetPage: React.FC = () => {
                 });
                 const sortedData = response.data.sort((a: any, b: any) => a.id - b.id);
                 setData(sortedData);
+                console.log(sortedData);
+                
             }
         } catch (error) {
             console.error('Ошибка при загрузке заявок:', error);
@@ -82,6 +84,9 @@ const PersonalCabinetPage: React.FC = () => {
                                     number={app.id}
                                     date={app.date}
                                     status={app.status.name}
+                                    item={app.items[0].item}
+                                    quantity={app.items[0].quantity}
+                                    unitMeasurement={app.items[0].unitMeasurement}
                                   
                                 />
                             </Grid>
