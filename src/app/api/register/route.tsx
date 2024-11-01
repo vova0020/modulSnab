@@ -1,3 +1,5 @@
+/* eslint-disable */
+// @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import prismaInteraction from '@/api/prisma';

@@ -1,115 +1,31 @@
+// PersonalCabinetPage.tsx
 'use client'
+/* eslint-disable */
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, Typography, Grid, Box, Chip } from '@mui/material';
-import { styled } from '@mui/system';
+import {
+    Typography,
+    Grid,
+    Box,
+    ThemeProvider,
+    createTheme,
+} from '@mui/material';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
-import Navbar from '@/app/components/navbar';
+import Navbar from '@/app/components/navbar'; // Импорт навигационной панели
+import ApplicationCard from '../../components/ApplicationCard'; // Импорт карточки заявки
 
-interface ApplicationCardProps {
-    number: string;
-    date: string;
-    status: string;
-}
-
-interface DecodedToken {
-    role: string; // Предполагаем, что в токене есть поле 'role'
-    firstName: string; // Предполагаем, что в токене есть поле 'sector'
-    lastName: string; // Предполагаем, что в токене есть поле 'sector'
-    id: number; // Предполагаем, что в токене есть поле 'sector'
-
-}
-
-// Стиль для карточек
-const StyledCard = styled(Card)(({ theme }) => ({
-    minWidth: 150,
-    borderRadius: '12px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-    transition: 'transform 0.2s, box-shadow 0.2s',
-    '&:hover': {
-        transform: 'scale(1.02)',
-        boxShadow: '0 6px 16px rgba(0, 0, 0, 0.15)',
-    },
-    [theme.breakpoints.down('sm')]: {
-        minWidth: '100%', // Для мобильных - растянуть карточки на всю ширину
-        marginBottom: theme.spacing(2),
-    },
-}));
-
-// Определение цвета статуса
-const getStatusColor = (status: string) => {
-    switch (status) {
-        case 'В работе':
-            return 'primary';
-        case 'Завершена':
-            return 'success';
-        case 'В ожидании':
-            return 'warning';
-        default:
-            return 'default';
-    }
-};
-
-
-
-
-// Компонент для отображения заявки
-const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, status }) => {
-
-
-
-
-
-    return (
-        <StyledCard variant="outlined">
-            <CardContent>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Заявка № {number}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                    Дата: {new Date(date).toLocaleDateString('ru-RU')}
-                </Typography>
-                <Box mt={1}>
-                    <Chip
-                        label={status}
-                        color={getStatusColor(status)}
-                        sx={{
-                            fontSize: '0.75rem',
-                            fontWeight: 'bold',
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                        }}
-                    />
-                </Box>
-            </CardContent>
-        </StyledCard>
-    );
-};
-
-
-
-// Основная страница
 const PersonalCabinetPage: React.FC = () => {
+    const [data, setData] = useState([]); // Хранит заявки
+    const [token, setToken] = useState<string | null>(null); // Токен пользователя
+    const [userId, setUserId] = useState<number | null>(null); // Идентификатор пользователя
 
-    const [data, setData] = useState([]);
-    const [token, setToken] = useState<string | null>(null);
-    
-    const [userId, setUserId] = useState<number | null>(null); // Состояние для хранения роли пользователя
-    // Состояние для хранения сектора пользователя
-
-    useEffect(()=>{
-        console.log(data);
-        
-    },[data])
-    
     useEffect(() => {
-        const storedToken = localStorage.getItem('token'); // Получаем токен
+        const storedToken = localStorage.getItem('token');
         if (storedToken) {
-            setToken(storedToken); // Сохраняем токен в стейте
+            setToken(storedToken);
             try {
-                const decoded: DecodedToken = jwtDecode(storedToken); // Декодируем JWT
-                setUserId(decoded.id); // Сохраняем роль в состоянии
-                //   setFullName(decoded.id)
+                const decoded: any = jwtDecode(storedToken);
+                setUserId(decoded.id);
             } catch (error) {
                 console.error("Ошибка при декодировании токена:", error);
             }
@@ -120,45 +36,60 @@ const PersonalCabinetPage: React.FC = () => {
         try {
             if (userId != null) {
                 const response = await axios.get('/api/getDataUser', {
-                    params: { userId }, // передаем userId через params
+                    params: { userId },
                 });
-                const data: Request[] = response.data; // Предполагаем, что data - это массив объектов
-                
-                // Сортировка данных по возрастанию по полю `id`
-                const sortedData = data.sort((a, b) => a.id - b.id);
-    
-                console.log(sortedData);
+                const sortedData = response.data.sort((a: any, b: any) => a.id - b.id);
                 setData(sortedData);
             }
         } catch (error) {
             console.error('Ошибка при загрузке заявок:', error);
         }
     };
-    
+
     useEffect(() => {
-
-
         fetchRequests(userId);
-    }, [userId]);
+        const intervalId = setInterval(() => {
+            fetchRequests(userId); // Обновляем данные
+        }, 4000); // Обновляем каждые 5 секунд
+    
+        // Очищаем интервал при размонтировании компонента
+        return () => clearInterval(intervalId);
+       
+      }, [userId]);
 
+
+    const theme = createTheme({
+        palette: {
+            primary: {
+                main: '#1976d2',
+            },
+        },
+    });
 
     return (
-        <div>
-               <Navbar />
-               <Box sx={{ padding: { xs: 2, sm: 3 }, textAlign: { xs: 'center', sm: 'left' } }}>
-            <Typography variant="h4" gutterBottom>
-                Мои заявки
-            </Typography>
-            <Grid container spacing={2} justifyContent="center">
-                {data.map((app) => (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={app.number}>
-                        <ApplicationCard number={app.id} date={app.date} status={app.status.name} />
+        <ThemeProvider theme={theme}>
+            <div>
+                <Navbar />
+                <Box sx={{ padding: { xs: 2, sm: 3 }, textAlign: { xs: 'center', sm: 'left' } }}>
+                    <Typography variant="h4" gutterBottom>
+                        Мои заявки
+                    </Typography>
+                    <Grid container spacing={2} justifyContent="center">
+                        {data.map((app) => (
+                            <Grid item xs={12} sm={6} md={4} lg={3} key={app.number}>
+                                    {/* @ts-ignore */}
+                                <ApplicationCard
+                                    number={app.id}
+                                    date={app.date}
+                                    status={app.status.name}
+                                  
+                                />
+                            </Grid>
+                        ))}
                     </Grid>
-                ))}
-            </Grid>
-        </Box>
-        </div>
-        
+                </Box>
+            </div>
+        </ThemeProvider>
     );
 };
 

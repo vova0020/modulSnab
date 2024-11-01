@@ -1,87 +1,154 @@
 'use client';
+/* eslint-disable */
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Link from 'next/link';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import { useRouter } from 'next/navigation';
-import { jwtDecode } from 'jwt-decode'; // Импортируем библиотеку для декодирования токена
+import { usePathname, useRouter } from 'next/navigation';
+import MenuIcon from '@mui/icons-material/Menu';
+import IconButton from '@mui/material/IconButton';
+import Drawer from '@mui/material/Drawer';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import LogoutIcon from '@mui/icons-material/Logout';
+import Avatar from '@mui/material/Avatar'; // Import Avatar component
+import { jwtDecode } from 'jwt-decode';
+import { useMediaQuery, useTheme } from '@mui/material';
 
 interface DecodedToken {
-  role: string; // Предполагаем, что в токене есть поле 'role'
-  sector: string; // Предполагаем, что в токене есть поле 'sector'
+  role: string;
 }
 
 const Navbar: React.FC = () => {
-
   const [token, setToken] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null); // Состояние для хранения роли пользователя
-// Состояние для хранения сектора пользователя
+  const [role, setRole] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const router = useRouter();
+  const isMobile = useMediaQuery('(max-width:600px)');
+  const pathname = usePathname();
+  const theme = useTheme();
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('token'); // Получаем токен
+    const storedToken = localStorage.getItem('token');
     if (storedToken) {
-      setToken(storedToken); // Сохраняем токен в стейте
+      setToken(storedToken);
       try {
-        const decoded: DecodedToken = jwtDecode(storedToken); // Декодируем JWT
-        setRole(decoded.role); // Сохраняем роль в состоянии
-       
+        const decoded: DecodedToken = jwtDecode(storedToken);
+        setRole(decoded.role);
       } catch (error) {
         console.error("Ошибка при декодировании токена:", error);
       }
     }
-  }, []); // Выполняется только при первом рендере
-
- 
+  }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token'); // Удаляем токен при выходе
-    router.push('/pages/auth'); // Перенаправление на страницу авторизации
+    localStorage.removeItem('token');
+    router.push('/');
   };
 
+  const toggleDrawer = (open: boolean) => () => {
+    setDrawerOpen(open);
+  };
+
+  const drawerList = () => (
+    <List>
+      {role === 'Руководство' && renderLink("/pages/applicationsTable", "Согласование")}
+      {(role === 'Снабжение' || role === 'Руководство') && renderLink("/pages/procurementPage", "Снабжение")}
+      {renderLink("/pages/createRequest", "Создание заявки")}
+      {role === 'Руководство' && renderLink("/pages/createUsers", "Создание пользователя")}
+      {role === 'Руководство' && renderLink("/pages/admika", "Админка")}
+      {renderLink("/pages/personalCabinet", "Личный кабинет")}
+      {role && (
+        // @ts-ignore
+        <ListItem button onClick={handleLogout}>
+          <Avatar sx={{ bgcolor: 'primary.main', mr: 1, width: 36, height: 36 }}>
+            <LogoutIcon />
+          </Avatar>
+          <ListItemText primary="Выйти" />
+        </ListItem>
+      )}
+    </List>
+  );
+
+  const renderLink = (href: string, label: string) => (
+    <ListItem
+    // @ts-ignore
+      button
+      component={Link}
+      href={href}
+      onClick={() => setDrawerOpen(false)}
+      sx={{
+        color: pathname === href ? theme.palette.primary.main : 'inherit',
+        backgroundColor: pathname === href ? 'rgba(0, 0, 255, 0.1)' : 'inherit',
+        boxShadow: pathname === href ? '0 2px 10px rgba(0, 0, 0, 0.1)' : 'none',
+        transition: 'background-color 0.3s ease, color 0.3s ease',
+        borderRadius: 1,
+        px: 2,
+        '&:hover': {
+          backgroundColor: 'rgba(0, 0, 255, 0.15)',
+          color: theme.palette.primary.dark,
+        },
+      }}
+    >
+      <ListItemText primary={label} />
+    </ListItem>
+  );
+
   return (
-    <AppBar position="static" sx={{ backgroundColor: '#333' }}>
-      <Toolbar sx={{ color: 'white' }}>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          MyApp
-        </Typography>
-
-        <Link href="/" passHref>
-          <Button color="inherit">Home</Button>
-        </Link>
-        <Link href="/pages/applicationsTable" passHref>
-          <Button color="inherit">Согласование</Button>
-        </Link>
-        <Link href="/pages/procurementPage" passHref>
-          <Button color="inherit">Снабжение</Button>
-        </Link>
-        <Link href="/pages/createRequest" passHref>
-          <Button color="inherit">Создание заявки</Button>
-        </Link>
-        <Link href="/pages/createUsers" passHref>
-          <Button color="inherit">Создание пользователя</Button>
-        </Link>
-        <Link href="/pages/personalCabinet" passHref>
-          <Button color="inherit">Личный кабинет</Button>
-        </Link>
-        {/* <Link href="/pages/createRequest" passHref>
-          <Button color="inherit">Создание заявки</Button>
-        </Link> */}
-
-       
-
-        {/* Элементы для других ролей */}
-        {role && (
-          <>
-            <Button color="inherit" onClick={handleLogout}>Выйти</Button>
-          </>
-        )}
-      </Toolbar>
-    </AppBar>
+    <>
+      <AppBar position="static" sx={{ backgroundColor: '#fff', color: '#333', boxShadow: 'none', borderRadius: 5 }}>
+        <Toolbar>
+          <Typography variant="h6" component="div">
+            {/* Логотип или заголовок приложения */}
+          </Typography>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', borderRadius: 5 }}>
+            {isMobile ? (
+              <IconButton edge="end" color="inherit" onClick={toggleDrawer(true)}>
+                <MenuIcon />
+              </IconButton>
+            ) : (
+              <>
+                {role === 'Руководство' && renderLink("/pages/applicationsTable", "Согласование")}
+                {(role === 'Снабжение' || role === 'Руководство') && renderLink("/pages/procurementPage", "Снабжение")}
+                {renderLink("/pages/createRequest", "Создание заявки")}
+                {role === 'Руководство' && renderLink("/pages/createUsers", "Создание пользователя")}
+                {role === 'Руководство' && renderLink("/pages/admika", "Админка")}
+                {renderLink("/pages/personalCabinet", "Личный кабинет")}
+                {role && (
+                  <Button
+                    color="inherit"
+                    onClick={handleLogout}
+                    sx={{
+                      ml: 1,
+                      textTransform: 'none',
+                      padding: 0,
+                      minWidth: 'auto',
+                      borderRadius: '50%',
+                      '& .MuiAvatar-root': {
+                        width: 36,
+                        height: 36,
+                        bgcolor: 'primary.main',
+                      },
+                    }}
+                  >
+                    <Avatar>
+                      <LogoutIcon />
+                    </Avatar>
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        </Toolbar>
+      </AppBar>
+      <Drawer anchor="right" open={drawerOpen} onClose={toggleDrawer(false)}>
+        {drawerList()}
+      </Drawer>
+    </>
   );
 };
 

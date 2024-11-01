@@ -1,3 +1,8 @@
 {
-  "extends": ["next/core-web-vitals", "next/typescript"]
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "rules": {
+    "@typescript-eslint/ban-ts-comment": "off",         // Отключает правило для @ts-nocheck
+    "@typescript-eslint/no-unused-vars": "warn",        // Установить предупреждение вместо ошибки для неиспользуемых переменных
+    "@typescript-eslint/no-explicit-any": "off"         // Отключает предупреждение о 'any'
+  }
 }

@@ -7,15 +7,13 @@ const prisma = new prismaInteraction();
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
-        const requestId = searchParams.get("userId");
-        // console.log(requestId);
-        
+        const requestId = searchParams.get("requestId");
 
         if (!requestId) {
-            return NextResponse.json({ message: 'userId не указан' }, { status: 400 });
+            return NextResponse.json({ message: 'requestId не указан' }, { status: 400 });
         }
 
-        const newOrder = await prisma.getCabinet(Number(requestId));
+        const newOrder = await prisma.getClarification(Number(requestId));
 
         return NextResponse.json(newOrder, { status: 200 });
     } catch (error) {

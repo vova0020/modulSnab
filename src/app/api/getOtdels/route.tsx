@@ -18,3 +18,16 @@ export async function GET() {
         return NextResponse.json({ message: 'Ошибка при получении Отделов' }, { status: 500 });
     }
 }
+export async function POST(req: NextRequest) {
+ 
+    try {
+        const data = await req.json(); // Парсинг тела запроса
+        const newOrder = await prisma.createOtdels(data);
+        // console.log(data);
+        
+        return NextResponse.json(newOrder, { status: 201 });
+    } catch (error) {
+        console.error('Ошибка при создании отдела:', error);
+        return NextResponse.json({ message: 'Ошибка при создании отдела' }, { status: 500 });
+    }
+}

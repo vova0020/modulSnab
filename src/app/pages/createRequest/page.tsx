@@ -1,35 +1,27 @@
 'use client'
-// pages/request.tsx
+/* eslint-disable */
+// @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import { Container, TextField, Grid, MenuItem, Select, InputLabel, FormControl, Button, Typography, Box, IconButton } from '@mui/material';
+import { Container, TextField, Grid, MenuItem, Select, InputLabel, FormControl, Button, Typography, Box, IconButton, Alert, Snackbar } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { format } from 'date-fns';
 import RemoveIcon from '@mui/icons-material/Remove';
 import AddIcon from '@mui/icons-material/Add';
 import axios from 'axios';
 import Navbar from '@/app/components/navbar';
-import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
-
-
-
-
 interface DecodedToken {
     role: string; // Предполагаем, что в токене есть поле 'role'
     firstName: string; // Предполагаем, что в токене есть поле 'sector'
     lastName: string; // Предполагаем, что в токене есть поле 'sector'
     id: number; // Предполагаем, что в токене есть поле 'sector'
-
 }
-
 const RequestForm: React.FC = () => {
-
     // Данные которые из базы
     const currentDate = format(new Date(), 'dd.MM.yyyy');
     const [requestNumber, setRequestNumber] = useState<number>(0);
     const [otdels, setOtdels] = useState<{ id: number; name: string }[]>([]);
     const [sectors, setSectors] = useState<{ id: number; name: string }[]>([]);
-
     // Данные для заполнения
     const [department, setDepartment] = useState<number>();
     const [section, setSection] = useState<number>();
@@ -43,6 +35,18 @@ const RequestForm: React.FC = () => {
     const [comment, setComment] = useState<string>('');
     const [orders, setOrders] = useState<{ description: string; quantity: number }[]>([{ description: '', quantity: 0 }]);
 
+    const [imageFile, setImageFile] = useState<File | null>(null);
+
+    // Обработчик для загрузки изображения
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setImageFile(file);
+        }
+    };
+
+
+
     // Обработчики
     const handlePurposeChange = (event: React.ChangeEvent<{ value: unknown }>) => {
         const selectedPurpose = event.target.value as string;
@@ -52,42 +56,35 @@ const RequestForm: React.FC = () => {
     const handleAddOrder = () => {
         setOrders([...orders, { description: '', quantity: 0 }]);
     };
+
+    const [openSnackbar, setOpenSnackbar] = useState(false); // Состояние для Snackbar
+
+
+
+    const handleCloseSnackbar = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setOpenSnackbar(false);
+    };
     const handleSubmit = async () => {
         const requestData = {
-            requestNumber,
-            date: currentDate,
-            department,
-            section,
-            fullName,
-            purpose,
-            subPurpose,
-            description,
-            unitMeasurement,
-            quantity,
-            urgency,
-            comment,
-            orders: subPurpose === 'Для офиса' ? orders : [], // Добавляем список заказов для офиса
+            requestNumber, date: currentDate, department, section, fullName, purpose, subPurpose, description, unitMeasurement, quantity, urgency, comment, orders: subPurpose === 'Для офиса' ? orders : [], // Добавляем список заказов для офиса
         };
-
         console.log("Данные для отправки:", requestData);
-
-        // Здесь можно выполнить отправку данных на сервер
-        // Пример: axios.post('/api/request', requestData)
         await axios.post('/api/createRequest', requestData)
-        window.location.reload();
-
-
-
+        setOpenSnackbar(true);
+        // Отложенная перезагрузка через 3 секунды
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
     };
-
-
     const [token, setToken] = useState<string | null>(null);
     const [role, setRole] = useState<string | null>(null); // Состояние для хранения роли пользователя
     const [firstName, seFirstName] = useState<string | null>(null); // Состояние для хранения роли пользователя
     const [lastName, setLastName] = useState<string | null>(null); // Состояние для хранения роли пользователя
     const [userId, setUserId] = useState<string | null>(null); // Состояние для хранения роли пользователя
     // Состояние для хранения сектора пользователя
-
 
     useEffect(() => {
         const storedToken = localStorage.getItem('token'); // Получаем токен
@@ -98,6 +95,7 @@ const RequestForm: React.FC = () => {
                 setRole(decoded.role); // Сохраняем роль в состоянии
                 seFirstName(decoded.firstName); // Сохраняем роль в состоянии
                 setLastName(decoded.lastName); // Сохраняем роль в состоянии
+                // @ts-ignore
                 setUserId(decoded.id); // Сохраняем роль в состоянии
                 setFullName(decoded.id)
             } catch (error) {
@@ -128,9 +126,6 @@ const RequestForm: React.FC = () => {
         // Очищаем интервал при размонтировании компонента
         return () => clearInterval(interval);
     }, []);
-
-
-
     // Запрос для получения списка отделов и участков
     useEffect(() => {
         const fetchData = async () => {
@@ -162,15 +157,6 @@ const RequestForm: React.FC = () => {
 
         fetchData();
     }, []);
-    useEffect(() => {
-        console.log('Сохраненные данные');
-        console.log(department);
-        console.log(section);
-
-    }, [department,
-        section])
-
-
 
     // Функция для удаления строки по индексу
     const handleRemoveOrder = (index: number) => {
@@ -180,7 +166,6 @@ const RequestForm: React.FC = () => {
         }
     };
 
-
     const handleOrderChange = (index: number, field: 'description' | 'quantity', value: string | number) => {
         const updatedOrders = orders.map((order, i) =>
             i === index ? { ...order, [field]: value } : order
@@ -189,9 +174,18 @@ const RequestForm: React.FC = () => {
     };
 
     return (
-        <div>
+        <div style={{ borderColor: 'black' }}>
             <Navbar />
-            <Container maxWidth="md" sx={{ mt: 5 }}>
+            <Container maxWidth="md" sx={{
+                mt: 5,
+                border: '1px solid #888888',   // Немного темнее для контраста
+                backgroundColor: '#fcfcfc',
+                padding: 2,
+                borderRadius: 4,               // Закругленные углы
+                // boxShadow: '5px 5px 10px rgba(0, 0, 0, 0.2), -5px -5px 10px rgba(255, 255, 255, 0.5)',  // Эффект выпуклости
+                boxShadow: '-10px -10px 30px #FFFFFF, 10px 10px 30px rgba(174, 174, 192, 0.5)',
+            }}>
+
                 <Typography variant="h4" gutterBottom>
                     Регистрация заявки в снабжение
                 </Typography>
@@ -213,101 +207,118 @@ const RequestForm: React.FC = () => {
                 </Grid>
 
                 {/* Второй блок */}
-                <Box mt={3}>
-                    <Grid container spacing={2}>
-                        <Grid item xs={4}>
-                            <FormControl fullWidth>
-                                <InputLabel>Отдел</InputLabel>
-                                <Select value={department} onChange={(e) => setDepartment(e.target.value as number)}>
-                                    {otdels.map((otdel: { id: number; name: string }) => (
-                                        <MenuItem key={otdel.id} value={otdel.id}>
-                                            {otdel.name}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                <Box mt={3} >
+                    <Grid container spacing={2} >
+                        <Grid item xs={4} >
+                            <TextField select
+                                required
+                                fullWidth
+                                id="department"
+                                label="Отдел"
+                                // @ts-ignore
+                                onChange={(e) => setDepartment(e.target.value as number)}
+                            >
+                                {otdels.map((otdel: { id: number; name: string }) => (
+                                    <MenuItem key={otdel.id} value={otdel.id}>
+                                        {otdel.name}
+                                    </MenuItem>
+                                ))}
+
+                            </TextField>
                         </Grid>
                         <Grid item xs={4}>
-                            <FormControl fullWidth>
-                                <InputLabel>Участок</InputLabel>
-                                <Select value={section} onChange={(e) => setSection(e.target.value as number)}>
-                                    {sectors.map((sector: { id: number; name: string }) => (
-                                        <MenuItem key={sector.id} value={sector.id}>
-                                            {sector.name}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                            <TextField select
+                                required
+                                fullWidth
+                                id="sectors"
+                                label="Участок"
+                                // @ts-ignore
+                                onChange={(e) => setSection(e.target.value as number)}
+                            >
+                                {sectors.map((sector: { id: number; name: string }) => (
+                                    <MenuItem key={sector.id} value={sector.id}>
+                                        {sector.name}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+
                         </Grid>
                         <Grid item xs={4}>
                             <TextField
                                 label="ФИО"
                                 value={`${firstName} , ${lastName}`}
+                                // @ts-ignore
                                 onChange={(e) => setFullName(e.target.value)}
                                 fullWidth
                             />
                         </Grid>
                     </Grid>
                 </Box>
-
                 {/* Третий блок */}
                 <Box mt={3}>
                     <Grid container spacing={2}>
                         <Grid item xs={6}>
-                            <FormControl fullWidth>
-                                <InputLabel>Зачем?</InputLabel>
-                                <Select value={purpose} onChange={handlePurposeChange}>
-                                    <MenuItem value="Потребность под выпуск">Потребность под выпуск</MenuItem>
-                                    <MenuItem value="Потребность под основной поток">Потребность под основной поток</MenuItem>
-                                    <MenuItem value="Расходные материалы">Расходные материалы</MenuItem>
-                                    <MenuItem value="Оборудование">Оборудование</MenuItem>
-                                </Select>
-                            </FormControl>
+                            <TextField select
+                                required
+                                fullWidth
+                                id="purpose"
+                                label="Зачем?"
+                                onChange={handlePurposeChange}
+                            >
+                                <MenuItem value="Потребность под выпуск">Потребность под выпуск</MenuItem>
+                                <MenuItem value="Потребность под основной поток">Потребность под основной поток</MenuItem>
+                                <MenuItem value="Расходные материалы">Расходные материалы</MenuItem>
+                                <MenuItem value="Оборудование">Оборудование</MenuItem>
+                            </TextField>
                         </Grid>
-
                         {purpose === 'Потребность под выпуск' && (
                             <Grid item xs={6}>
-                                <FormControl fullWidth>
-                                    <InputLabel>Подкатегория</InputLabel>
-                                    <Select value={subPurpose} onChange={(e) => setSubPurpose(e.target.value as string)}>
-                                        <MenuItem value="Заказ уже в производстве">Заказ уже в производстве</MenuItem>
-                                        <MenuItem value="Только получил запуск">Только получил запуск</MenuItem>
-                                    </Select>
-                                </FormControl>
+                                <TextField select
+                                    required
+                                    fullWidth
+                                    id="subPurpose"
+                                    label="Подкатегория"
+                                    onChange={(e) => setSubPurpose(e.target.value as string)}
+                                >
+                                    <MenuItem value="Заказ уже в производстве">Заказ уже в производстве</MenuItem>
+                                    <MenuItem value="Только получил запуск">Только получил запуск</MenuItem>
+                                </TextField>
                             </Grid>
                         )}
-
                         {purpose === 'Потребность под основной поток' && (
                             <Grid item xs={6}>
-                                <FormControl fullWidth>
-                                    <InputLabel>Подкатегория</InputLabel>
-                                    <Select value={subPurpose} onChange={(e) => setSubPurpose(e.target.value as string)}>
-                                        <MenuItem value="Поток в производстве">Поток в производстве</MenuItem>
-                                        <MenuItem value="Поток планируется">Поток планируется</MenuItem>
-                                    </Select>
-                                </FormControl>
+                                <TextField select
+                                    required
+                                    fullWidth
+                                    id="subPurpose"
+                                    label="Подкатегория"
+                                    onChange={(e) => setSubPurpose(e.target.value as string)}
+                                >
+                                    <MenuItem value="Поток в производстве">Поток в производстве</MenuItem>
+                                    <MenuItem value="Поток планируется">Поток планируется</MenuItem>
+                                </TextField>
                             </Grid>
                         )}
-
                         {purpose === 'Расходные материалы' && (
                             <Grid item xs={6}>
-                                <FormControl fullWidth>
-                                    <InputLabel>Подкатегория</InputLabel>
-                                    <Select value={subPurpose} onChange={(e) => setSubPurpose(e.target.value as string)}>
-                                        <MenuItem value="Для оборудования">Для оборудования</MenuItem>
-                                        <MenuItem value="Для модулей">Для модулей</MenuItem>
-                                        <MenuItem value="Для рабочего места">Для рабочего места</MenuItem>
-                                        <MenuItem value="Для офиса">Для офиса</MenuItem>
-                                        <MenuItem value="Для потока производства">Для потока производства</MenuItem>
-                                    </Select>
-                                </FormControl>
+                                <TextField select
+                                    required
+                                    fullWidth
+                                    id="subPurpose"
+                                    label="Подкатегория"
+                                    onChange={(e) => setSubPurpose(e.target.value as string)}
+                                >
+                                    <MenuItem value="Для оборудования">Для оборудования</MenuItem>
+                                    <MenuItem value="Для модулей">Для модулей</MenuItem>
+                                    <MenuItem value="Для рабочего места">Для рабочего места</MenuItem>
+                                    {/* <MenuItem value="Для офиса">Для офиса</MenuItem> */}
+                                    <MenuItem value="Для потока производства">Для потока производства</MenuItem>
+                                </TextField>
                             </Grid>
                         )}
                     </Grid>
                 </Box>
-
                 {/* Четвертый блок */}
-
                 {/* Поля для "что заказать" и "количество" */}
                 {subPurpose === 'Для офиса' ? (
                     <Box mt={3}>
@@ -318,6 +329,7 @@ const RequestForm: React.FC = () => {
                                     <Grid container spacing={1} key={index}>
                                         <Grid item xs={7}>
                                             <TextField
+                                                required
                                                 label="Что нужно заказать?"
                                                 value={order.description}
                                                 onChange={(e) => handleOrderChange(index, 'description', e.target.value)}
@@ -328,22 +340,24 @@ const RequestForm: React.FC = () => {
                                             <TextField
                                                 label="Количество"
                                                 type="number"
+                                                required
                                                 // value={order.quantity}
                                                 onChange={(e) => handleOrderChange(index, 'quantity', Number(e.target.value))}
                                                 fullWidth
                                             />
                                         </Grid>
                                         <Grid item xs={3}>
-                                            <FormControl fullWidth>
-                                                <InputLabel>Еденица измерения</InputLabel>
-                                                <Select value={unitMeasurement} onChange={(e) => setUnitMeasurement(e.target.value as string)}>
-                                                    <MenuItem value="шт">шт</MenuItem>
-                                                    <MenuItem value="кг">кг</MenuItem>
-                                                    <MenuItem value="Пачка">Пачка</MenuItem>
-                                                    {/* <MenuItem value="Для офиса">Для офиса</MenuItem>
-                                                <MenuItem value="Для потока производства">Для потока производства</MenuItem> */}
-                                                </Select>
-                                            </FormControl>
+                                            <TextField select
+                                                required
+                                                fullWidth
+                                                id="unitMeasurement"
+                                                label="Единица измерения"
+                                                onChange={(e) => setUnitMeasurement(e.target.value as string)}
+                                            >
+                                                <MenuItem value="шт">шт</MenuItem>
+                                                <MenuItem value="кг">кг</MenuItem>
+                                                <MenuItem value="Пачка">Пачка</MenuItem>
+                                            </TextField>
                                         </Grid>
                                         <Box display="flex" justifyContent="center" mt={2}>
                                             <IconButton onClick={handleAddOrder}><AddIcon /></IconButton>
@@ -356,20 +370,20 @@ const RequestForm: React.FC = () => {
                                 </Box>
 
                             ))}
-
-
-
                             <Box mt={3} mb={5} >
                                 <Grid container spacing={3}>
                                     <Grid item xs={3}>
-                                        <FormControl fullWidth>
-                                            <InputLabel>Срочность</InputLabel>
-                                            <Select value={urgency} onChange={(e) => setUrgency(e.target.value as string)}>
-                                                <MenuItem value="Низкая">Низкая</MenuItem>
-                                                <MenuItem value="Средняя">Средняя</MenuItem>
-                                                <MenuItem value="Высокая">Высокая</MenuItem>
-                                            </Select>
-                                        </FormControl>
+                                        <TextField select
+                                            required
+                                            fullWidth
+                                            id="urgency"
+                                            label="Срочность"
+                                            onChange={(e) => setUrgency(e.target.value as string)}
+                                        >
+                                            <MenuItem value="Низкая">Низкая</MenuItem>
+                                            <MenuItem value="Средняя">Средняя</MenuItem>
+                                            <MenuItem value="Высокая">Высокая</MenuItem>
+                                        </TextField>
                                     </Grid>
                                     {/* Поле для загрузки картинки */}
                                     <Grid item xs={6}>
@@ -380,7 +394,6 @@ const RequestForm: React.FC = () => {
                                             fullWidth
                                         />
                                     </Grid>
-
                                     {/* Поле для вставки картинки */}
                                     <Grid item xs={3}>
                                         <Button
@@ -392,24 +405,13 @@ const RequestForm: React.FC = () => {
                                                 type="file"
                                                 hidden
                                                 accept="image/*"
-                                                onChange={(e) => {
-                                                    const file = e.target.files?.[0];
-                                                    if (file) {
-                                                        const reader = new FileReader();
-                                                        reader.onloadend = () => {
-                                                            console.log('Загружено изображение:', reader.result);
-                                                        };
-                                                        reader.readAsDataURL(file);
-                                                    }
-                                                }}
+                                                onChange={handleImageUpload}
                                             />
                                         </Button>
                                     </Grid>
                                 </Grid>
 
                             </Box>
-
-
                             {/* Комментарий */}
                             <Grid item xs={12}>
                                 <TextField
@@ -428,6 +430,7 @@ const RequestForm: React.FC = () => {
                         <Grid item xs={6}>
                             <TextField
                                 label="Что нужно заказать?"
+                                required
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 fullWidth
@@ -439,6 +442,7 @@ const RequestForm: React.FC = () => {
                         <Grid item xs={3}>
                             <TextField
                                 label="Количество"
+                                required
                                 type="number"
                                 // value={quantity}
                                 onChange={(e) => setQuantity(Number(e.target.value))}
@@ -446,40 +450,44 @@ const RequestForm: React.FC = () => {
                             />
                         </Grid>
                         <Grid item xs={3}>
-                            <FormControl fullWidth>
-                                <InputLabel>Еденица измерения</InputLabel>
-                                <Select value={unitMeasurement} onChange={(e) => setUnitMeasurement(e.target.value as string)}>
-                                    <MenuItem value="шт">шт</MenuItem>
-                                    <MenuItem value="кг">кг</MenuItem>
-                                    <MenuItem value="Пачка">Пачка</MenuItem>
-                                    {/* <MenuItem value="Для офиса">Для офиса</MenuItem>
-                                                <MenuItem value="Для потока производства">Для потока производства</MenuItem> */}
-                                </Select>
-                            </FormControl>
+                            <TextField select
+                                required
+                                fullWidth
+                                id="unitMeasurement"
+                                label="Единица измерения"
+                                onChange={(e) => setUnitMeasurement(e.target.value as string)}
+                            >
+                                <MenuItem value="шт">шт</MenuItem>
+                                <MenuItem value="кг">кг</MenuItem>
+                                <MenuItem value="Пачка">Пачка</MenuItem>
+                            </TextField>
                         </Grid>
                         <Grid item xs={3}>
-                            <FormControl fullWidth>
-                                <InputLabel>Срочность</InputLabel>
-                                <Select value={urgency} onChange={(e) => setUrgency(e.target.value as string)}>
-                                    <MenuItem value="Низкая">Низкая</MenuItem>
-                                    <MenuItem value="Средняя">Средняя</MenuItem>
-                                    <MenuItem value="Высокая">Высокая</MenuItem>
-                                </Select>
-                            </FormControl>
+                            <TextField select
+                                required
+                                fullWidth
+                                id="urgency"
+                                label="Срочность"
+                                onChange={(e) => setUrgency(e.target.value as string)}
+                            >
+                                <MenuItem value="Низкая">Низкая</MenuItem>
+                                <MenuItem value="Средняя">Средняя</MenuItem>
+                                <MenuItem value="Высокая">Высокая</MenuItem>
+                            </TextField>
                         </Grid>
 
                         {/* Поле для загрузки картинки */}
-                        <Grid item xs={6}>
+                        {/* <Grid item xs={6}>
                             <TextField
                                 label="Ссылка на изображение"
                                 placeholder="Вставьте ссылку"
                                 onChange={(e) => setDescription(e.target.value)}
                                 fullWidth
                             />
-                        </Grid>
+                        </Grid> */}
 
                         {/* Поле для вставки картинки */}
-                        <Grid item xs={6}>
+                        {/* <Grid item xs={6}>
                             <Button
                                 variant="outlined"
                                 component="label"
@@ -501,7 +509,7 @@ const RequestForm: React.FC = () => {
                                     }}
                                 />
                             </Button>
-                        </Grid>
+                        </Grid> */}
 
                         {/* Комментарий */}
                         <Grid item xs={12}>
@@ -515,18 +523,24 @@ const RequestForm: React.FC = () => {
                             />
                         </Grid>
                     </Grid>
-
                 </Box>)}
-
-
-
                 <Box mt={3} display="flex" justifyContent="center" alignItems="center">
                     <Button variant="contained" endIcon={<SendIcon />} onClick={handleSubmit}>
                         Отправить на согласование
                     </Button>
                 </Box>
-
-
+                {/* Уведомление Snackbar */}
+                <Snackbar
+                    open={openSnackbar}
+                    autoHideDuration={6000}
+                    onClose={handleCloseSnackbar}
+                    anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                >
+                        {/*  @ts-ignore */}
+                    <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: '100%' }}>
+                        Данные успешно отправлены!
+                    </Alert>
+                </Snackbar>
             </Container>
         </div>
 

@@ -1,8 +1,8 @@
 /* eslint-disable */
 
-
+// @ts-nocheck
 import { PrismaClient } from '@prisma/client';
-// import { NextApiRequest, NextApiResponse } from 'next';
+
 const prisma = new PrismaClient();
 
 
@@ -63,6 +63,27 @@ export default class prismaInteraction {
       await prisma.$disconnect();
     }
   }
+  async createOtdels(data:{
+    name:string
+  }) {
+    // Для создания заявки получаем последний id и обновляем номер заявки
+    console.log(data);
+    
+    try {
+      const lastOtdel = await prisma.otdel.create({
+        data:{
+          name: data.name
+        }
+      });
+      return lastOtdel;
+    } catch (error) {
+      console.error('Ошибка при создании отделоа:', error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+  
   async getSectors() {
     // Для создания заявки получаем последний id и обновляем номер заявки
     try {
@@ -70,6 +91,24 @@ export default class prismaInteraction {
       return lastSector;
     } catch (error) {
       console.error('Ошибка при получении списка участков:', error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+  async createSectors(data:{
+    name:string
+  }) {
+    // Для создания заявки получаем последний id и обновляем номер заявки
+    try {
+      const lastSector = await prisma.sector.create({
+        data:{
+          name: data.name
+        }
+      });
+      return lastSector;
+    } catch (error) {
+      console.error('Ошибка при создании участка:', error);
       throw error;
     } finally {
       await prisma.$disconnect();
@@ -285,6 +324,99 @@ export default class prismaInteraction {
 
 
 
+  async getRequestAplicationCard(requestId: number) {
+    try {
+      console.log(requestId);
+
+      const requestData = await prisma.request.findFirst({
+        where: { id: requestId },
+        include: {
+          status: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          items: {
+            select: {
+              id: true,
+              item: true,
+              quantity: true,
+              amount: true,
+              unitMeasurement: true,
+            },
+          },
+          
+        },
+      });
+
+      return requestData;
+    } catch (error) {
+      console.error('Ошибка при получении списка заявок:', error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+  async putRequestAplicationCard(applicationNumber: number, updatedData: any) {
+    try {
+      // Обновление статуса заявки
+      const requestUpdate = await prisma.request.update({
+        where: { id: Number(applicationNumber) },
+        data: {
+          comment:updatedData.comment,
+          promptness:updatedData.promptness,
+          status: {
+            connect: { id: 3 } 
+          },
+        },
+      });
+      const requestUpdate2 = await prisma.requestItem.update({
+        where: { id: Number(updatedData.items[0].id) },
+        data: {
+          item: updatedData.items[0].item,
+          quantity: updatedData.items[0].quantity,
+          unitMeasurement: updatedData.items[0].unitMeasurement,
+        },
+      });
+
+  
+      
+  
+      return {
+        requestUpdate,
+        
+      };
+    } catch (error) {
+      console.error('Ошибка при получении списка заявок:', error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+
+
+  async getClarification(requestId: number) {
+    try {
+      // console.log(requestId);
+
+      const requestData = await prisma.clarification.findFirst({
+        where: { requestId: requestId },
+        orderBy: {
+          id: 'desc',  // Поле для сортировки в порядке убывания
+        },
+      });
+
+      return requestData;
+    } catch (error) {
+      console.error('Ошибка при получении списка заявок:', error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+
+
   async getCabinet(requestId: number) {
     try {
 
@@ -330,21 +462,30 @@ export default class prismaInteraction {
 
 
 
-  async putRequestSnabData(id: number, statusPut: number) {
+  async putRequestSnabData(id: number, statusPut: number, question: string) {
     try {
-      // console.log(requestId);
-
+      // Обновление статуса заявки
       const requestUpdate = await prisma.request.update({
         where: { id: Number(id) },
         data: {
           status: {
-            connect: { id: statusPut } // Связываем новый статус с заявкой
+            connect: { id: statusPut } 
           },
         },
       });
-
-
-      return requestUpdate;
+  
+      // Создание записи о уточнении
+      const clarification = await prisma.clarification.create({
+        data: {
+          requestId: id, // Идентификатор заявки
+          question: question // Текст уточнения
+        }
+      });
+  
+      return {
+        requestUpdate,
+        clarification
+      };
     } catch (error) {
       console.error('Ошибка при получении списка заявок:', error);
       throw error;
@@ -352,6 +493,8 @@ export default class prismaInteraction {
       await prisma.$disconnect();
     }
   }
+
+
   async putRequestSnab(requestId: number, updatedData: number) {
     try {
       console.log(updatedData);

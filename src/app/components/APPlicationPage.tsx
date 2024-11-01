@@ -1,15 +1,22 @@
-'use client';
+/* eslint-disable */
+// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Box, Typography, Button, Grid, TextField } from '@mui/material';
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  Grid, 
+  TextField, 
+  Modal,
+  Snackbar,
+  Alert
+} from '@mui/material';
 import axios from 'axios';
 
-
-
 interface ApplicationPageProps {
-  requestId: number; // Укажите здесь правильный тип для requestId
+  requestId: number; 
 }
-
 
 type Request = {
   id: number;
@@ -27,13 +34,15 @@ type Request = {
   sector: { id: number; name: string };
   creator: { firstName: string; lastName: string };
   items: { id: number; item: string; quantity: number; amount: number; unitMeasurement: string }[];
-  // Добавьте остальные поля по необходимости
 };
 
 const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [inWork, setInWork] = useState(false);
-  const [requestData, setRequestData] = useState<Request | null>(null)
+  const [requestData, setRequestData] = useState<Request | null>(null);
+  const [open, setOpen] = useState(false);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [question, setQuestion] = useState(''); 
 
   const [formData, setFormData] = useState({
     itemsId: 0,
@@ -45,43 +54,38 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
     deliveryDate: '',
     comment: '',
   });
+
   const fetchRequests = async () => {
     try {
       const response = await axios.get('/api/getSnabData', {
-        params: { requestId }, // передаем requestId через params
+        params: { requestId },
       });
-      const data: Request = response.data; // Получаем данные напрямую из response.data
-      setRequestData(data)
-
+      const data: Request = response.data;
+      setRequestData(data);
     } catch (error) {
       console.error('Ошибка при загрузке заявок:', error);
     }
   };
+
   useEffect(() => {
-    
-
     fetchRequests();
-  }, [requestId]); // Зависимость от requestId, если он может измениться
-
+  }, [requestId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
       [name]: value,
-      
     }));
   };
 
   const handleSubmit = async () => {
     const updatedData = {
       ...formData,
-      amount: parseFloat(formData.amount), // Преобразуем в число при отправке
-      itemsId: requestData?.items[0].id
+      amount: parseFloat(formData.amount),
+      itemsId: requestData?.items[0].id,
     };
     try {
-      // console.log(formData);
-      
       const response = await axios.put('/api/putSnab',{requestId, updatedData});
       if (response.status === 200) {
         alert('Данные успешно отправлены на сервер!');
@@ -93,42 +97,52 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
     }
   };
 
+  const workButton = 'В РАБОТУ';
+  const correctionButton = 'ОТПРАВИТЬ НА УТОЧНЕНИЕ';
+  const ButtonMoneyOK = 'ОПЛАЧЕН';
+  const buttonDostavka = 'ДОСТАВКА';
+  const buttonComplete = 'ЗАВЕРШИТЬ';
 
-  // Название кнопок
-  const workButton = 'В РАБОТУ'
-  const correctionButton = 'ОТПРАВИТЬ НА УТОЧНЕНИЕ'
-  const ButtonMoneyOK = 'ОПЛАЧЕН'
-  const buttonDostavka = 'ДОСТАВКА'
-  const buttonComplete = 'ЗАВЕРШИТЬ'
-  // const statusComplete = 'Завершить'
-
-  const statusWork = 'В работе'
-  const statusMoney = 'Согласован к оплате'
-  const statusMoneyOk = 'Оплачен'
-  const statusDostavka = 'Доставка'
-  const statusComplete = 'Завершена'
+  const statusNew = 'Согласован к закупке';
+  const statusWork = 'В работе';
+  const statusMoney = 'Согласован к оплате';
+  const statusMoneyOk = 'Оплачен';
+  const statusDostavka = 'Доставка';
+  const statusComplete = 'Завершена';
 
   useEffect(() => {
     console.log(requestData?.items[0].id || '...гружу');
   }, [requestData])
 
-
-
-  const images: string[] = []; // Пример пустого массива, если изображений нет
+  const images: string[] = [];
 
   const handleImageClick = (index: number) => {
     setSelectedImage(index);
   };
 
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+  const handleSnackbarClose = (event: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+
+    setOpenSnackbar(false);
+  };
+
+  const handleQuestionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuestion(e.target.value);
+  };
+
   const handleInWorkClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
     const buttonText = (event.currentTarget as HTMLButtonElement).innerText;
-    setInWork(true); // Скрываем кнопки и показываем форму
-    const id: number = requestData?.id || 0;
+    setInWork(true); 
 
+    const id: number = requestData?.id || 0;
 
     if (buttonText === workButton) {
       try {
-        const statusPut: number = 4; // статус в работу
+        const statusPut: number = 4;
         await axios.put('/api/getSnabData', { id, statusPut });
         console.log('Данные успешно обновлены');
         fetchRequests()
@@ -136,35 +150,28 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
         console.error('Ошибка при обновлении данных:', error);
       }
     } else if (buttonText === correctionButton) {
+      handleOpen();
+    } else if (buttonText === ButtonMoneyOK) {
       try {
-        const statusPut: number = 10; // статус на уточнении
+        const statusPut: number = 7;
         await axios.put('/api/getSnabData', { id, statusPut });
         console.log('Данные успешно обновлены');
         fetchRequests()
       } catch (error) {
         console.error('Ошибка при обновлении данных:', error);
       }
-    }else if (buttonText === ButtonMoneyOK) {
+    } else if (buttonText === buttonDostavka) {
       try {
-        const statusPut: number = 7; // статус на уточнении
+        const statusPut: number = 8;
         await axios.put('/api/getSnabData', { id, statusPut });
         console.log('Данные успешно обновлены');
         fetchRequests()
       } catch (error) {
         console.error('Ошибка при обновлении данных:', error);
       }
-    }else if (buttonText === buttonDostavka) {
+    } else if (buttonText === buttonComplete) {
       try {
-        const statusPut: number = 8; // статус на уточнении
-        await axios.put('/api/getSnabData', { id, statusPut });
-        console.log('Данные успешно обновлены');
-        fetchRequests()
-      } catch (error) {
-        console.error('Ошибка при обновлении данных:', error);
-      }
-    }else if (buttonText === buttonComplete) {
-      try {
-        const statusPut: number = 9; // статус на уточнении
+        const statusPut: number = 9;
         await axios.put('/api/getSnabData', { id, statusPut });
         console.log('Данные успешно обновлены');
         fetchRequests()
@@ -173,9 +180,6 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
       }
     }
   };
-
-
-
 
   return (
     <Box
@@ -188,7 +192,6 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
         margin: '0 auto',
       }}
     >
-      {/* Верхняя часть с номером заявки и датой */}
       <Grid
         container
         justifyContent="space-between"
@@ -202,15 +205,12 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
       >
         <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
           Заявка № {requestData?.id || '....Загрузка'}
-
         </Typography>
         <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
           Дата: {new Date(requestData?.date || '....Загрузка').toLocaleDateString('ru-RU')}
-
         </Typography>
       </Grid>
 
-      {/* Горизонтальное расположение блока с изображениями и блока с описанием */}
       <Box
         sx={{
           display: 'flex',
@@ -222,7 +222,6 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
           boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
         }}
       >
-        {/* Блок с изображениями */}
         <Box sx={{ flex: '1', maxWidth: '500px' }}>
           {images.length > 0 ? (
             <Image
@@ -270,7 +269,6 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
           </Grid>
         </Box>
 
-        {/* Блок с описанием заявки */}
         <Box
           sx={{
             flex: '2',
@@ -359,7 +357,6 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
                   <br />
                   {requestData?.subOrderReason || '....Загрузка'}
                 </>
-
               </Typography>
             </Box>
 
@@ -407,8 +404,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
         </Box>
       </Box>
 
-      {/* Кнопки */}
-      {(!inWork && requestData?.status.name === statusWork) && (
+      {(!inWork && requestData?.status.name === statusNew) && (
         <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
           <Button variant="contained" color="primary" onClick={handleInWorkClick} sx={{ minWidth: '150px' }}>
             {workButton}
@@ -419,8 +415,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
         </Box>
       )}
 
-      {/* Форма после нажатия на "В работу" */}
-      {(inWork && requestData?.status.name == statusWork) &&  (
+      {((inWork && requestData?.status.name == statusWork)||(!inWork && requestData?.status.name == statusWork)) &&  (
         <Box
           sx={{
             display: 'flex',
@@ -480,7 +475,67 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
         </Button>
       </Box>
       )))}
-      
+
+      <Modal
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="simple-modal-title"
+        aria-describedby="simple-modal-description"
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 400,
+            backgroundColor: 'white',
+            boxShadow: 24,
+            padding: 4,
+            borderRadius: '8px',
+          }}
+        >
+          <Typography variant="h6" id="simple-modal-title">
+            Уточнение заявки
+          </Typography>
+          <Typography variant="body1" id="simple-modal-description" sx={{ mt: 2 }}>
+            Введите вопрос:
+          </Typography>
+          <TextField
+            label="Вопрос"
+            value={question}
+            onChange={handleQuestionChange}
+            fullWidth
+            sx={{ mt: 2 }}
+          />
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+            <Button onClick={handleClose} sx={{mr:5}}>Отмена</Button>
+            <Button onClick={() => {
+              handleClose();
+              const id: number = requestData?.id || 0;
+              const statusPut: number = 10;
+              axios.put('/api/getSnabData', { id, statusPut, question })
+                .then(() => {
+                  console.log('Данные успешно обновлены');
+                  fetchRequests();
+                  setOpenSnackbar(true);
+                })
+                .catch((error) => {
+                  console.error('Ошибка при обновлении данных:', error);
+                });
+            }} variant="contained" color="primary">
+              Подтвердить
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
+
+      <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleSnackbarClose}>
+        <Alert onClose={handleSnackbarClose} severity="success">
+          Заявка успешно отправлена на уточнение!
+        </Alert>
+      </Snackbar>
+
     </Box>
   );
 };

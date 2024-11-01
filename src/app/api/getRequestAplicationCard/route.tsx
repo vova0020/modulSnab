@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ message: 'requestId не указан' }, { status: 400 });
         }
 
-        const newOrder = await prisma.getRequestSnabData(Number(requestId));
+        const newOrder = await prisma.getRequestAplicationCard(Number(requestId));
 
         return NextResponse.json(newOrder, { status: 200 });
     } catch (error) {
@@ -25,12 +25,12 @@ export async function GET(req: NextRequest) {
 // PUT-запрос для обновления данных
 export async function PUT(req: NextRequest) {
     try {
-        const { id, statusPut, question } = await req.json(); // Извлекаем id, field и value из тела запроса
-        console.log(question);
+        const { applicationNumber, updatedData} = await req.json(); // Извлекаем id, field и value из тела запроса
+       
         // console.log(statusPut);
         
         // Обновляем запись в базе данных с помощью Prisma
-        const updatedStatus = await prisma.putRequestSnabData(id, statusPut, question);
+        const updatedStatus = await prisma.putRequestAplicationCard(applicationNumber, updatedData);
 
         return NextResponse.json(updatedStatus, { status: 200 });
     } catch (error) {
@@ -38,3 +38,4 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ message: 'Ошибка при обновлении Заявки' }, { status: 500 });
     }
 }
+

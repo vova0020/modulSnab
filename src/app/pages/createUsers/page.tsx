@@ -18,6 +18,7 @@ import axios from 'axios';
 import { Alert } from '@mui/material';
 
 import Navbar from '@/app/components/navbar';
+import withAuth from '@/app/components/withAuth';
 
 const theme = createTheme();
 
@@ -30,7 +31,7 @@ type RegisterFormInputs = {
     role: string;
 };
 
-export default function Register() {
+const Register: React.FC = () => {
 
     const roles = ['Руководство', 'Снабжение', 'Пользователь'];
 
@@ -200,3 +201,4 @@ export default function Register() {
 
     );
 }
+export default withAuth(Register, ['Руководство']); // Без ограничения по ролям

@@ -7,94 +7,113 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
-    seed = "node prisma/seed.js"
+  seed     = "node prisma/seed.js"
 }
 
 model User {
-  id              Int             @id @default(autoincrement())
-  firstName       String? // Имя
-  lastName        String? // Фамилия
-  login           String          @unique // Логин
-  password        String // Пароль
-  role            String? // роль
-  requests        Request[] // Один пользователь может иметь несколько заявок
-  changeHistories ChangeHistory[]
+  id                     Int                     @id @default(autoincrement())
+  firstName              String? // Имя
+  lastName               String? // Фамилия
+  login                  String                  @unique // Логин
+  password               String // Пароль
+  role                   String? // роль
+  requests               Request[] // Один пользователь может иметь несколько заявок
+  changeHistories        ChangeHistory[] // История изменений пользователя
+  clarificationResponses ClarificationResponse[] // Ответы пользователя на уточнения
 }
-
 
 model Otdel {
   id       Int       @id @default(autoincrement())
   name     String // Название отдела
-  requests Request[] // Один пользователь может иметь несколько заявок
+  requests Request[] // Один отдел может иметь несколько заявок
 }
 
 model Sector {
   id       Int       @id @default(autoincrement())
   name     String // Название участка
-  requests Request[] // Один пользователь может иметь несколько заявок
+  requests Request[] // Один сектор может иметь несколько заявок
 }
 
 model Request {
   id                  Int             @id @default(autoincrement())
-  date                DateTime?    @default(now()) // Дата заявки
+  date                DateTime?       @default(now()) // Дата заявки
   orderReason         String? // Зачем заказ
   subOrderReason      String? // Подкатегория зачем заказ
   comment             String? // Комментарий
-  approvedForPurchase Boolean?         @default(false) // Прошло согласование к закупке
-  approvedForPayment  Boolean?         @default(false) // Прошло согласование к оплате
+  approvedForPurchase Boolean?        @default(false) // Прошло согласование к закупке
+  approvedForPayment  Boolean?        @default(false) // Прошло согласование к оплате
   promptness          String? // Срочность  
   invoiceNumber       String? // Номер счета
   additionalComment   String? // Дополнительный комментарий
   creatorId           Int
   otdelId             Int
   sectorId            Int
-  creator             User            @relation(fields: [creatorId], references: [id])
-  otdel               Otdel           @relation(fields: [otdelId], references: [id])
-  sector              Sector          @relation(fields: [sectorId], references: [id])
+  creator             User            @relation(fields: [creatorId], references: [id], onDelete: Cascade) // Каскадное удаление
+  otdel               Otdel           @relation(fields: [otdelId], references: [id], onDelete: Cascade) // Каскадное удаление
+  sector              Sector          @relation(fields: [sectorId], references: [id], onDelete: Cascade) // Каскадное удаление
   statusId            Int
-  status              Status          @relation(fields: [statusId], references: [id])
-  items               RequestItem[] // Состав заявки
-  images              Image[] // Изображения заявки
-  statusHistory       StatusHistory[] // История статусов
-  changeHistory       ChangeHistory[] // История изменений
+  status              Status          @relation(fields: [statusId], references: [id], onDelete: Cascade) // Каскадное удаление
+  items               RequestItem[]   // Удален onDelete
+  images              Image[]         // Удален onDelete
+  statusHistory       StatusHistory[] // Удален onDelete
+  changeHistory       ChangeHistory[] // Удален onDelete
+  clarifications      Clarification[]  // Удален onDelete
 }
 
 model RequestItem {
-  id             Int    @id @default(autoincrement())
-  item           String? // Что заказано
-  quantity       Int? // Количество
-  
-  unitMeasurement String? // Еденица измерения
-  provider String? // Поставщик
-  supplierName1C String? // Наименование из 1С
-  supplierName   String? // Наименование у поставщика
-
-  amount           Float? // Сумма
-  deliveryDeadline DateTime? // Срок поставки
+  id                Int     @id @default(autoincrement())
+  item              String? // Что заказано
+  quantity          Int? // Количество
+  unitMeasurement   String? // Единица измерения
+  provider          String? // Поставщик
+  supplierName1C    String? // Наименование из 1С
+  supplierName      String? // Наименование у поставщика
+  amount            Float? // Сумма
+  deliveryDeadline  DateTime? // Срок поставки
   requestId        Int
-  request          Request   @relation(fields: [requestId], references: [id])
+  request          Request   @relation(fields: [requestId], references: [id], onDelete: Cascade) // Каскадное удаление
 }
 
 model Image {
   id        Int     @id @default(autoincrement())
-  url       String? // Ссылка на картинку
+  url       String? // Ссылка на изображение (если есть)
   file      String? // Сохранение изображения (путь или ссылка на файл)
+  data      Bytes?  // Данные изображения в формате BYTEA
   requestId Int
-  request   Request @relation(fields: [requestId], references: [id])
+  request   Request @relation(fields: [requestId], references: [id], onDelete: Cascade) // Каскадное удаление
 }
 
 model Status {
-  id            Int             @id @default(autoincrement())
-  name          String // Название статуса
-  requests      Request[] // Один статус может быть у нескольких заявок
-  statusHistory StatusHistory[] // Используется в истории статусов
+  id             Int             @id @default(autoincrement())
+  name           String // Название статуса
+  requests       Request[] // Один статус может быть у нескольких заявок
+  statusHistory  StatusHistory[] // Используется в истории статусов
+}
+
+model Clarification {
+  id        Int                     @id @default(autoincrement())
+  requestId Int // Ссылка на заявку
+  request   Request                 @relation(fields: [requestId], references: [id], onDelete: Cascade) // Каскадное удаление
+  question  String? // Текст уточнения
+  responses ClarificationResponse[] // Массив ответов на это уточнение
+  createdAt DateTime                @default(now()) // Дата создания уточнения
+}
+
+model ClarificationResponse {
+  id              Int           @id @default(autoincrement())
+  clarificationId Int // Ссылка на уточнение
+  clarification   Clarification @relation(fields: [clarificationId], references: [id]) // Убрано onDelete
+  userId          Int // Ссылка на пользователя, который ответил
+  user            User          @relation(fields: [userId], references: [id])
+  responseText    String // Текст ответа на уточнение
+  createdAt       DateTime      @default(now()) // Дата ответа
 }
 
 model StatusHistory {
   id               Int      @id @default(autoincrement())
   date             DateTime // Дата изменения статуса
   requestId        Int
-  request          Request  @relation(fields: [requestId], references: [id])
+  request          Request  @relation(fields: [requestId], references: [id], onDelete: Cascade) // Каскадное удаление
   statusId         Int
   status           Status   @relation(fields: [statusId], references: [id])
   previousStatusId Int? // Предыдущий статус
@@ -104,7 +123,7 @@ model ChangeHistory {
   id            Int      @id @default(autoincrement())
   date          DateTime // Дата изменения
   requestId     Int
-  request       Request  @relation(fields: [requestId], references: [id])
+  request       Request  @relation(fields: [requestId], references: [id], onDelete: Cascade) // Каскадное удаление
   fieldChanged  String // Поле, которое было изменено
   previousValue String? // Старое значение
   newValue      String? // Новое значение
