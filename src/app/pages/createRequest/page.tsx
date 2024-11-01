@@ -22,6 +22,7 @@ const RequestForm: React.FC = () => {
     const [requestNumber, setRequestNumber] = useState<number>(0);
     const [otdels, setOtdels] = useState<{ id: number; name: string }[]>([]);
     const [sectors, setSectors] = useState<{ id: number; name: string }[]>([]);
+    const [measureUnit, setmeasureUnit] = useState<{ id: number; name: string }[]>([]);
     // Данные для заполнения
     const [department, setDepartment] = useState<number>();
     const [section, setSection] = useState<number>();
@@ -30,7 +31,7 @@ const RequestForm: React.FC = () => {
     const [subPurpose, setSubPurpose] = useState<string | null>(null);
     const [description, setDescription] = useState<string>('');
     const [unitMeasurement, setUnitMeasurement] = useState<string>('');
-    const [quantity, setQuantity] = useState<number>(1);
+    const [quantity, setQuantity] = useState<number>(0);
     const [urgency, setUrgency] = useState<string>('Низкая');
     const [comment, setComment] = useState<string>('');
     const [orders, setOrders] = useState<{ description: string; quantity: number }[]>([{ description: '', quantity: 0 }]);
@@ -112,7 +113,7 @@ const RequestForm: React.FC = () => {
                     const requestData = response.data;
                     console.log(requestData);
                     if (requestData == null) {
-                        setRequestNumber(1);
+                        setRequestNumber(0);
                     } else {
                         // Можно добавить логику обработки данных, если данные не пустые
                         setRequestNumber(requestData); // Пример
@@ -130,17 +131,20 @@ const RequestForm: React.FC = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [requestIdResponse, otdelsResponse, sectorsResponse] = await Promise.all([
+                const [requestIdResponse, otdelsResponse, sectorsResponse, measureUnitResponse] = await Promise.all([
                     axios.get('/api/createRequest'),
                     axios.get('/api/getOtdels'),
-                    axios.get('/api/getSectors')
+                    axios.get('/api/getSectors'),
+                    axios.get('/api/measureUnit')
                 ]);
 
                 const requestId = requestIdResponse.data;
                 const otdelsData = otdelsResponse.data;
                 const sectorsData = sectorsResponse.data;
+                const measureUnitData = measureUnitResponse.data;
                 setOtdels(otdelsData)
                 setSectors(sectorsData)
+                setmeasureUnit(measureUnitData)
                 // console.log(otdelsData);
                 // console.log(sectorsData);
                 if (requestId == null) {
@@ -354,9 +358,14 @@ const RequestForm: React.FC = () => {
                                                 label="Единица измерения"
                                                 onChange={(e) => setUnitMeasurement(e.target.value as string)}
                                             >
-                                                <MenuItem value="шт">шт</MenuItem>
+                                                {measureUnit.map((sector: { id: number; name: string }) => (
+                                                    <MenuItem key={sector.id} value={sector.name}>
+                                                        {sector.name}
+                                                    </MenuItem>
+                                                ))}
+                                                {/* <MenuItem value="шт">шт</MenuItem>
                                                 <MenuItem value="кг">кг</MenuItem>
-                                                <MenuItem value="Пачка">Пачка</MenuItem>
+                                                <MenuItem value="Пачка">Пачка</MenuItem> */}
                                             </TextField>
                                         </Grid>
                                         <Box display="flex" justifyContent="center" mt={2}>
@@ -457,9 +466,11 @@ const RequestForm: React.FC = () => {
                                 label="Единица измерения"
                                 onChange={(e) => setUnitMeasurement(e.target.value as string)}
                             >
-                                <MenuItem value="шт">шт</MenuItem>
-                                <MenuItem value="кг">кг</MenuItem>
-                                <MenuItem value="Пачка">Пачка</MenuItem>
+                                {measureUnit.map((sector: { id: number; name: string }) => (
+                                    <MenuItem key={sector.id} value={sector.name}>
+                                        {sector.name}
+                                    </MenuItem>
+                                ))}
                             </TextField>
                         </Grid>
                         <Grid item xs={3}>
@@ -536,7 +547,7 @@ const RequestForm: React.FC = () => {
                     onClose={handleCloseSnackbar}
                     anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
                 >
-                        {/*  @ts-ignore */}
+                    {/*  @ts-ignore */}
                     <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: '100%' }}>
                         Данные успешно отправлены!
                     </Alert>

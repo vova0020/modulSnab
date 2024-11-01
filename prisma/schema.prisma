@@ -33,6 +33,11 @@ model Sector {
   name     String // Название участка
   requests Request[] // Один сектор может иметь несколько заявок
 }
+model MeasureUnit {
+  id       Int       @id @default(autoincrement())
+  name     String // Название участка
+  
+}
 
 model Request {
   id                  Int             @id @default(autoincrement())

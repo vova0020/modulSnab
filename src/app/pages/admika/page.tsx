@@ -10,17 +10,18 @@ import Navbar from '@/app/components/navbar';
 const AdminPage: React.FC = () => {
     const [departmentName, setDepartmentName] = useState('');
     const [sectorName, setSectorName] = useState('');
+    const [measureUnitName, setMeasureUnitName] = useState('');
     const [openSnackbar, setOpenSnackbar] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [openDialog, setOpenDialog] = useState(false);
     const [otdels, setOtdels] = useState([]);
     const [sectors, setSectors] = useState([]);
+    const [measureUnits, setMeasureUnits] = useState([]);
 
     const handleDepartmentSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
             await axios.post('/api/getOtdels', { name: departmentName });
-            console.log('Создан отдел:', departmentName);
             setSnackbarMessage(`Отдел "${departmentName}" успешно добавлен!`);
             setOpenSnackbar(true);
             setDepartmentName('');
@@ -36,7 +37,6 @@ const AdminPage: React.FC = () => {
         e.preventDefault();
         try {
             await axios.post('/api/getSectors', { name: sectorName });
-            console.log('Создан участок:', sectorName);
             setSnackbarMessage(`Участок "${sectorName}" успешно добавлен!`);
             setOpenSnackbar(true);
             setSectorName('');
@@ -48,9 +48,24 @@ const AdminPage: React.FC = () => {
         }
     };
 
+    const handleMeasureUnitSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await axios.post('/api/measureUnit', { name: measureUnitName });
+            setSnackbarMessage(`Единица измерения "${measureUnitName}" успешно добавлена!`);
+            setOpenSnackbar(true);
+            setMeasureUnitName('');
+            fetchMeasureUnits(); // Обновление списка единиц измерения
+        } catch (error) {
+            console.error('Ошибка при создании единицы измерения:', error);
+            setSnackbarMessage(`Ошибка при создании единицы измерения: ${error.message}`);
+            setOpenSnackbar(true);
+        }
+    };
+
     const fetchOtdels = async () => {
         try {
-            const response = await axios.get('/api/getOtdels'); // Получение списка отделов
+            const response = await axios.get('/api/getOtdels');
             setOtdels(response.data);
         } catch (error) {
             console.error('Ошибка при получении отделов:', error);
@@ -59,10 +74,19 @@ const AdminPage: React.FC = () => {
 
     const fetchSectors = async () => {
         try {
-            const response = await axios.get('/api/getSectors'); // Получение списка участков
+            const response = await axios.get('/api/getSectors');
             setSectors(response.data);
         } catch (error) {
             console.error('Ошибка при получении участков:', error);
+        }
+    };
+
+    const fetchMeasureUnits = async () => {
+        try {
+            const response = await axios.get('/api/measureUnit');
+            setMeasureUnits(response.data);
+        } catch (error) {
+            console.error('Ошибка при получении единиц измерения:', error);
         }
     };
 
@@ -71,8 +95,9 @@ const AdminPage: React.FC = () => {
     };
 
     const handleOpenDialog = () => {
-        fetchOtdels(); // Обновление списка перед открытием
-        fetchSectors(); // Обновление списка перед открытием
+        fetchOtdels();
+        fetchSectors();
+        fetchMeasureUnits();
         setOpenDialog(true);
     };
 
@@ -89,8 +114,7 @@ const AdminPage: React.FC = () => {
                 </Typography>
 
                 <Grid container spacing={4}>
-                    {/* Левая колонка - Форма для создания отдела */}
-                    <Grid item xs={12} md={6}>
+                    <Grid item xs={12} md={4}>
                         <Typography variant="h5" align="center" gutterBottom>
                             Создать отдел
                         </Typography>
@@ -109,8 +133,7 @@ const AdminPage: React.FC = () => {
                         </Box>
                     </Grid>
 
-                    {/* Правая колонка - Форма для создания участка */}
-                    <Grid item xs={12} md={6}>
+                    <Grid item xs={12} md={4}>
                         <Typography variant="h5" align="center" gutterBottom>
                             Создать участок
                         </Typography>
@@ -128,14 +151,31 @@ const AdminPage: React.FC = () => {
                             </Button>
                         </Box>
                     </Grid>
+
+                    <Grid item xs={12} md={4}>
+                        <Typography variant="h5" align="center" gutterBottom>
+                            Создать единицу измерения
+                        </Typography>
+                        <Box component="form" onSubmit={handleMeasureUnitSubmit} noValidate sx={{ mt: 2 }}>
+                            <TextField
+                                label="Единица измерения"
+                                variant="outlined"
+                                fullWidth
+                                value={measureUnitName}
+                                onChange={(e) => setMeasureUnitName(e.target.value)}
+                                required
+                            />
+                            <Button type="submit" variant="contained" color="success" fullWidth sx={{ mt: 2 }}>
+                                Создать единицу измерения
+                            </Button>
+                        </Box>
+                    </Grid>
                 </Grid>
 
-                {/* Кнопка для открытия диалогового окна */}
                 <Button variant="outlined" onClick={handleOpenDialog} sx={{ mt: 4 }}>
-                    Показать отделы и участки
+                    Показать отделы, участки и единицы измерения
                 </Button>
 
-                {/* Snackbar для уведомлений */}
                 <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleCloseSnackbar}>
                     <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: '100%' }}>
                         {snackbarMessage}
@@ -143,9 +183,8 @@ const AdminPage: React.FC = () => {
                 </Snackbar>
             </Paper>
 
-            {/* Диалоговое окно для отображения отделов и участков */}
             <Dialog open={openDialog} onClose={handleCloseDialog}>
-                <DialogTitle>Список отделов и участков</DialogTitle>
+                <DialogTitle>Список отделов, участков и единиц измерения</DialogTitle>
                 <DialogContent>
                     <Typography variant="h6">Отделы:</Typography>
                     <List>
@@ -163,6 +202,14 @@ const AdminPage: React.FC = () => {
                             </ListItem>
                         ))}
                     </List>
+                    <Typography variant="h6">Единицы измерения:</Typography>
+                    <List>
+                        {measureUnits.map((unit) => (
+                            <ListItem key={unit.id}>
+                                <ListItemText primary={unit.name} />
+                            </ListItem>
+                        ))}
+                    </List>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseDialog} color="primary">
@@ -173,8 +220,7 @@ const AdminPage: React.FC = () => {
         </Container>
         
         </div>
-        
     );
 };
 
-export default  withAuth(AdminPage, ['Руководство']);
+export default withAuth(AdminPage, ['Руководство']);

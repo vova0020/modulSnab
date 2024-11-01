@@ -114,6 +114,36 @@ export default class prismaInteraction {
       await prisma.$disconnect();
     }
   }
+  async getMeasureUnit() {
+    // Для создания заявки получаем последний id и обновляем номер заявки
+    try {
+      const lastSector = await prisma.measureUnit.findMany();
+      return lastSector;
+    } catch (error) {
+      console.error('Ошибка при получении списка участков:', error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+  async createMeasureUnit(data:{
+    name:string
+  }) {
+    // Для создания заявки получаем последний id и обновляем номер заявки
+    try {
+      const lastSector = await prisma.measureUnit.create({
+        data:{
+          name: data.name
+        }
+      });
+      return lastSector;
+    } catch (error) {
+      console.error('Ошибка при создании участка:', error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
 
 
 
