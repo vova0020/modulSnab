@@ -84,6 +84,7 @@ const PersonalCabinetPage: React.FC = () => {
                                     number={app.id}
                                     date={app.date}
                                     status={app.status.name}
+                                    /* @ts-ignore */
                                     item={app.items[0].item}
                                     quantity={app.items[0].quantity}
                                     unitMeasurement={app.items[0].unitMeasurement}
