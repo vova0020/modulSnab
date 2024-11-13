@@ -62,7 +62,7 @@ const Navbar: React.FC = () => {
       {role === 'Руководство' && renderLink("/pages/createUsers", "Создание пользователя")}
       {role === 'Руководство' && renderLink("/pages/admika", "Админка")}
       {renderLink("/pages/personalCabinet", "Личный кабинет")}
-      {renderLink("/pages/createApplications", "Новая форма заявки")}
+      {/* {renderLink("/pages/createApplications", "Новая форма заявки")} */}
       {role && (
         // @ts-ignore
         <ListItem button onClick={handleLogout}>
@@ -119,7 +119,7 @@ const Navbar: React.FC = () => {
                 {role === 'Руководство' && renderLink("/pages/createUsers", "Создание пользователя")}
                 {role === 'Руководство' && renderLink("/pages/admika", "Админка")}
                 {renderLink("/pages/personalCabinet", "Личный кабинет")}
-                {renderLink("/pages/createApplications", "Новая форма заявки")}
+                {/* {renderLink("/pages/createApplications", "Новая форма заявки")} */}
                 {role && (
                   <Button
                     color="inherit"
