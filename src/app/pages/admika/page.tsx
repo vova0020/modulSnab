@@ -21,7 +21,7 @@ const AdminPage: React.FC = () => {
     const handleDepartmentSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await axios.post('/api/getOtdels', { name: departmentName });
+            await axios.post('/api/createApplicationsPage/getOtdels', { name: departmentName });
             setSnackbarMessage(`Отдел "${departmentName}" успешно добавлен!`);
             setOpenSnackbar(true);
             setDepartmentName('');
@@ -36,7 +36,7 @@ const AdminPage: React.FC = () => {
     const handleSectorSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await axios.post('/api/getSectors', { name: sectorName });
+            await axios.post('/api/createApplicationsPage/getSectors', { name: sectorName });
             setSnackbarMessage(`Участок "${sectorName}" успешно добавлен!`);
             setOpenSnackbar(true);
             setSectorName('');
@@ -51,7 +51,7 @@ const AdminPage: React.FC = () => {
     const handleMeasureUnitSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await axios.post('/api/measureUnit', { name: measureUnitName });
+            await axios.post('/api/createApplicationsPage/measureUnit', { name: measureUnitName });
             setSnackbarMessage(`Единица измерения "${measureUnitName}" успешно добавлена!`);
             setOpenSnackbar(true);
             setMeasureUnitName('');
@@ -65,7 +65,7 @@ const AdminPage: React.FC = () => {
 
     const fetchOtdels = async () => {
         try {
-            const response = await axios.get('/api/getOtdels');
+            const response = await axios.get('/api/createApplicationsPage/getOtdels');
             setOtdels(response.data);
         } catch (error) {
             console.error('Ошибка при получении отделов:', error);
@@ -74,7 +74,7 @@ const AdminPage: React.FC = () => {
 
     const fetchSectors = async () => {
         try {
-            const response = await axios.get('/api/getSectors');
+            const response = await axios.get('/api/createApplicationsPage/getSectors');
             setSectors(response.data);
         } catch (error) {
             console.error('Ошибка при получении участков:', error);
@@ -83,7 +83,7 @@ const AdminPage: React.FC = () => {
 
     const fetchMeasureUnits = async () => {
         try {
-            const response = await axios.get('/api/measureUnit');
+            const response = await axios.get('/api/createApplicationsPage/measureUnit');
             setMeasureUnits(response.data);
         } catch (error) {
             console.error('Ошибка при получении единиц измерения:', error);
