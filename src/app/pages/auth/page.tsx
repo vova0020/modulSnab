@@ -47,9 +47,9 @@ export default function Auth() {
 
             // Редиректим на разные страницы в зависимости от роли
             if (decoded.role === 'Пользователь') {
-                router.push('/pages/createRequest');
+                router.push('/pages/createApplications');
             } else if (decoded.role === 'Снабжение') {
-                router.push('/pages/procurementPage');
+                router.push('/pages/starie/procurementPage');
             } else if (decoded.role === 'Руководство') {
                 router.push('/pages/applicationsTable');
             } else {

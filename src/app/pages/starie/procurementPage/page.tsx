@@ -18,24 +18,35 @@ import {
   Button,
   Drawer,
   Box,
+  AppBar,
+  IconButton,
+  Toolbar,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { yellow } from '@mui/material/colors';
 import ApplicationPage from '@/app/components/APPlicationPage';
 import axios from 'axios';
 import Navbar from '@/app/components/navbar';
+import MenuIcon from '@mui/icons-material/Menu';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'; // Иконка стрелки назад
 
 // Типы данных заявок
 type Request = {
+  expectationPayment: any;
+  items: any;
   id: number;
   date: string;
   status: string;
+  expectationPurchase;
 };
 
 // Компонент с деталями заявки
 const RequestDetailsPage: React.FC<{ requestId: number }> = ({ requestId }) => {
   return <ApplicationPage requestId={requestId} />;
 };
+// Объект для сопоставления статусов с цветами
+
+
 
 // Компонент для отображения заявок в аккордеонах
 const RequestBox: React.FC<{
@@ -55,6 +66,24 @@ const RequestBox: React.FC<{
   refProp,
   onRequestClick,
 }) => {
+  const statusColors = {
+    'Согласование к закупке': { background: '#f0f0f0', text: 'Ожидает согласования' },
+    'Согласован к закупке': { background: '#0008ff', text: 'Согласовано' },
+    'Согласование к оплате': { background: '#ccd71a', text: 'Согласование к оплате' },
+    'Согласован к оплате': { background: '#ccd71a', text: 'Согласован к оплате' },
+    'В работе': { background: '#ccd71a', text: 'В работе' },
+    'Оплачен': { background: '#ccd71a', text: 'Оплачен' },
+    'Доставка': { background: '#ccd71a', text: 'Доставляется' },
+    'Доставлено': { background: '#00ff10', text: 'Доставлено' },
+    'Не согласовано': { background: '#db130b', text: 'Не согласовано' },
+    'Отложено': { background: '#ff5600', text: 'Отложено' },
+    'default': { background: '#f0f0f0', text: 'Не указан' }
+  };
+  
+  // Функция для получения цвета и текста на основе статуса
+  const getStatusInfo = (status: string) => {
+    return statusColors[status] || statusColors['default'];
+  };
     return (
       <Accordion
         sx={{ mb: 2, borderRadius: 2, boxShadow: 3 }}
@@ -73,20 +102,74 @@ const RequestBox: React.FC<{
         <AccordionDetails>
           <Grid container spacing={2}>
             {requests.map((req) => (
+
               <Grid item xs={12} key={req.id}>
                 <Card
                   sx={{
                     boxShadow: 3,
                     borderRadius: 2,
-                    bgcolor: highlightedId === req.id ? yellow[100] : '#f5f5f5',
+                    bgcolor: highlightedId === req.id ? yellow[100] : req.expectationPurchase ? '#dbc20a' : '#f5f5f5',
                   }}
                   onClick={() => onRequestClick(req.id)}
                 >
                   <CardContent>
-                    <Typography variant="body1">Заявка № {req.id}</Typography>
-                    <Typography variant="body2">
-                      Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
-                    </Typography>
+                    {req.expectationPayment ?
+                      <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
+                        <Typography variant="body1">Заявка № {req.id}</Typography>
+                        <Typography variant="body2">
+                          Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
+                        </Typography>
+                        <Typography variant="body2">
+                          Статус: Отложено
+                        </Typography>
+                      </Box>
+                      :
+                      <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
+                        <Typography variant="body1">Заявка № {req.id}</Typography>
+                        <Typography variant="body2">
+                          Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
+                        </Typography>
+                      </Box>
+                    }
+
+                    <Grid>
+                      {req.items.map((item, index) => {
+                        const status = getStatusInfo(item.status.name);
+                        return (
+                          <Typography
+                            variant="subtitle2"
+                            gutterBottom
+                            sx={{
+                              border: '1px solid #cacaca',
+                              borderRadius: 50,
+                              padding: '3px 12px',
+                              display: 'flex',  // Используем flexbox
+                              flexWrap: 'wrap', // Разрешаем перенос на следующую строку
+                              alignItems: 'center', // Центрируем элементы по вертикали
+
+                            }}
+                          >
+                            Заказ - {item.item}. Количество - {item.quantity} {item.unitMeasurement}
+                            <Typography
+                              variant="subtitle2"
+                              sx={{
+                                backgroundColor: status.background, // Цвет фона
+                                color: 'black', // Цвет текста
+                                border: '1px solid #888', // Рамка вокруг текста
+                                borderRadius: 50, // Скругленные углы
+                                padding: '3px 8px', // Отступы внутри текста
+                                marginLeft: '8px', // Отступ слева для разделения
+                                display: 'inline', // Чтобы текст "Статус" был в одной строке
+                              }}
+                            >
+                              Статус: {status.text}
+                            </Typography>
+
+                          </Typography>
+
+                        )
+                      })}
+                    </Grid>
                   </CardContent>
                 </Card>
               </Grid>
@@ -126,21 +209,13 @@ const RequestsPage: React.FC = () => {
   const [requestsData, setRequestsData] = useState<{
     newRequests: Request[];
     inProgress: Request[];
-    onApproval: Request[];
-    clarification: Request[];
-    approved: Request[];
-    oplachen: Request[];
-    delivery: Request[];
+
 
     completed: Request[];
   }>({
     newRequests: [],
     inProgress: [],
-    onApproval: [],
-    clarification: [],
-    approved: [],
-    oplachen: [],
-    delivery: [],
+
 
     completed: [],
   });
@@ -153,47 +228,26 @@ const RequestsPage: React.FC = () => {
     try {
       const response = await axios.get('/api/getSnab'); // Укажите реальный URL
       const data: Request[] = response.data;
+      // console.log(data);
+
       const newRequests = data
-      // @ts-ignore
-        .filter(req => req.status.name === 'Согласован к закупке')
+        // @ts-ignore
+        .filter(req => req.approvedForPurchase === true && req.workSupply === false)
         .sort((a, b) => a.id - b.id);
       const inProgress = data
-      // @ts-ignore
-        .filter(req => req.status.name === 'В работе')
+        // @ts-ignore
+        .filter(req => (req.approvedForPayment === true || req.workSupply === true) && req.closed === false)
         .sort((a, b) => a.id - b.id);
-      const onApproval = data
-      // @ts-ignore
-        .filter(req => req.status.name === 'Согласование к оплате')
-        .sort((a, b) => a.id - b.id);
-      const approved = data
-      // @ts-ignore
-        .filter(req => req.status.name === 'Согласован к оплате')
-        .sort((a, b) => a.id - b.id);
-      const oplachen = data
-      // @ts-ignore
-        .filter(req => req.status.name === 'Оплачен')
-        .sort((a, b) => a.id - b.id);
-      const delivery = data
-      // @ts-ignore
-        .filter(req => req.status.name === 'Доставка')
-        .sort((a, b) => a.id - b.id);
-      const clarification = data
-      // @ts-ignore
-        .filter(req => req.status.name === 'На уточнении')
-        .sort((a, b) => a.id - b.id);
+
       const completed = data
-      // @ts-ignore
-        .filter(req => req.status.name === 'Завершена')
+        // @ts-ignore
+        .filter(req => req.closed === true)
         .sort((a, b) => a.id - b.id);
 
       setRequestsData({
         newRequests,
         inProgress,
-        onApproval,
-        approved,
-        clarification,
-        oplachen,
-        delivery,
+
 
         completed,
       });
@@ -249,6 +303,12 @@ const RequestsPage: React.FC = () => {
     }
     setSearchValue('')
   };
+  const toggleDrawer = () => {
+    setDrawerOpen((prev) => !prev); // Переключаем состояние открытости Drawer
+  };
+
+
+
 
   return (
     <div>
@@ -256,14 +316,14 @@ const RequestsPage: React.FC = () => {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <Container sx={{
-                mt: 5,
-                border: '1px solid #888888',   // Немного темнее для контраста
-                backgroundColor: '#fcfcfc',
-                padding: 2,
-                borderRadius: 4,               // Закругленные углы
-                // boxShadow: '5px 5px 10px rgba(0, 0, 0, 0.2), -5px -5px 10px rgba(255, 255, 255, 0.5)',  // Эффект выпуклости
-                boxShadow: '-10px -10px 30px #FFFFFF, 10px 10px 30px rgba(174, 174, 192, 0.5)',
-            }}>
+          mt: 5,
+          border: '1px solid #888888',   // Немного темнее для контраста
+          backgroundColor: '#fcfcfc',
+          padding: 2,
+          borderRadius: 4,               // Закругленные углы
+          // boxShadow: '5px 5px 10px rgba(0, 0, 0, 0.2), -5px -5px 10px rgba(255, 255, 255, 0.5)',  // Эффект выпуклости
+          boxShadow: '-10px -10px 30px #FFFFFF, 10px 10px 30px rgba(174, 174, 192, 0.5)',
+        }}>
           <Box display="flex" alignItems="center" justifyContent="center" sx={{ mb: 4 }}>
             <TextField
               label="Поиск по номеру заявки"
@@ -295,50 +355,6 @@ const RequestsPage: React.FC = () => {
                 onRequestClick={handleRequestClick}
               />
               <RequestBox
-                title="В работе"
-                requests={requestsData.inProgress}
-                highlightedId={highlightedRequestId}
-                expanded={openAccordionIndex === 1}
-                onAccordionToggle={() => setOpenAccordionIndex(openAccordionIndex === 1 ? null : 1)}
-                // @ts-ignore
-                refProp={(el) => (accordionRefs.current[1] = el)}
-                onRequestClick={handleRequestClick}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <RequestBox
-                title="На согласовании"
-                requests={requestsData.onApproval}
-                highlightedId={highlightedRequestId}
-                expanded={openAccordionIndex === 2}
-                onAccordionToggle={() => setOpenAccordionIndex(openAccordionIndex === 2 ? null : 2)}
-                // @ts-ignore
-                refProp={(el) => (accordionRefs.current[2] = el)}
-                onRequestClick={handleRequestClick}
-              />
-              <RequestBox
-                title="Согласовано"
-                requests={requestsData.approved}
-                highlightedId={highlightedRequestId}
-                expanded={openAccordionIndex === 3}
-                onAccordionToggle={() => setOpenAccordionIndex(openAccordionIndex === 3 ? null : 3)}
-                // @ts-ignore
-                refProp={(el) => (accordionRefs.current[3] = el)}
-                onRequestClick={handleRequestClick}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <RequestBox
-                title="На уточнении"
-                requests={requestsData.clarification}
-                highlightedId={highlightedRequestId}
-                expanded={openAccordionIndex === 4}
-                onAccordionToggle={() => setOpenAccordionIndex(openAccordionIndex === 4 ? null : 4)}
-                // @ts-ignore
-                refProp={(el) => (accordionRefs.current[4] = el)}
-                onRequestClick={handleRequestClick}
-              />
-              <RequestBox
                 title="Завершено"
                 requests={requestsData.completed}
                 highlightedId={highlightedRequestId}
@@ -349,31 +365,53 @@ const RequestsPage: React.FC = () => {
                 onRequestClick={handleRequestClick}
               />
             </Grid>
+
             <Grid item xs={12} md={6}>
               <RequestBox
-                title="Оплачен"
-                requests={requestsData.oplachen}
+                title="В работе"
+                requests={requestsData.inProgress}
                 highlightedId={highlightedRequestId}
-                expanded={openAccordionIndex === 6}
-                onAccordionToggle={() => setOpenAccordionIndex(openAccordionIndex === 6 ? null : 6)}
+                expanded={openAccordionIndex === 1}
+                onAccordionToggle={() => setOpenAccordionIndex(openAccordionIndex === 1 ? null : 1)}
                 // @ts-ignore
-                refProp={(el) => (accordionRefs.current[6] = el)}
-                onRequestClick={handleRequestClick}
-              />
-              <RequestBox
-                title="Доставка"
-                requests={requestsData.delivery}
-                highlightedId={highlightedRequestId}
-                expanded={openAccordionIndex === 7}
-                onAccordionToggle={() => setOpenAccordionIndex(openAccordionIndex === 7 ? null : 7)}
-                // @ts-ignore
-                refProp={(el) => (accordionRefs.current[7] = el)}
+                refProp={(el) => (accordionRefs.current[1] = el)}
                 onRequestClick={handleRequestClick}
               />
             </Grid>
+
+
           </Grid>
 
-          <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+          <Drawer
+            anchor="right"
+            open={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+            sx={{
+              flexShrink: 0, // Предотвращает сужение Drawer
+              '& .MuiDrawer-paper': {
+                width: '80%', // Ширина для десктопных и больших экранов
+                boxSizing: 'border-box', // Для правильного отображения ширины
+              },
+              '@media (max-width:600px)': { // Для мобильных устройств
+                '& .MuiDrawer-paper': {
+                  width: '100%', // Ширина на мобильных устройствах
+                },
+              },
+            }}
+            variant="temporary" // Временный Drawer
+          >
+            <AppBar position="static">
+              <Toolbar>
+                <IconButton edge="start" color="inherit" onClick={toggleDrawer}>
+                  {drawerOpen ? (
+                    <ArrowBackIcon /> // Если Drawer открыт, показываем стрелку назад
+                  ) : (
+                    <MenuIcon /> // Если Drawer закрыт, показываем меню
+                  )}
+                </IconButton>
+              </Toolbar>
+            </AppBar>
+
             {selectedRequestId && <RequestDetailsPage requestId={selectedRequestId} />}
           </Drawer>
         </Container>

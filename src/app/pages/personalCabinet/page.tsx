@@ -35,7 +35,7 @@ const PersonalCabinetPage: React.FC = () => {
     const fetchRequests = async (userId: number) => {
         try {
             if (userId != null) {
-                const response = await axios.get('/api/getDataUser', {
+                const response = await axios.get('/api/personalCabinetPage/getDataUser', {
                     params: { userId },
                 });
                 const sortedData = response.data.sort((a: any, b: any) => a.id - b.id);
@@ -78,16 +78,18 @@ const PersonalCabinetPage: React.FC = () => {
                     </Typography>
                     <Grid container spacing={2} justifyContent="center">
                         {data.map((app) => (
-                            <Grid item xs={12} sm={6} md={4} lg={3} key={app.number}>
+                            <Grid item xs={12} sm={12} md={5} lg={5} key={app.number}>
                                     {/* @ts-ignore */}
                                 <ApplicationCard
                                     number={app.id}
                                     date={app.date}
-                                    status={app.status.name}
+                                      /* @ts-ignore */
+                                    app={app}
+                                    // status={app.status.name}
                                     /* @ts-ignore */
-                                    item={app.items[0].item}
-                                    quantity={app.items[0].quantity}
-                                    unitMeasurement={app.items[0].unitMeasurement}
+                                    items={app.items}
+                                    // quantity={app.items[0].quantity}
+                                    // unitMeasurement={app.items[0].unitMeasurement}
                                   
                                 />
                             </Grid>

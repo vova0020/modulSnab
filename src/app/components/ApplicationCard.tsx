@@ -44,22 +44,39 @@ const StyledCard = styled(Card)(({ theme, highlight }: { highlight?: boolean }) 
     position: 'relative',
 }));
 
-const getStatusColor = (status: string) => {
-    switch (status) {
-        case 'В работе':
-            return 'primary';
-        case 'Завершена':
-            return 'success';
-        case 'В ожидании':
-            return 'warning';
-        case 'На уточнении':
-            return 'error';
-        default:
-            return 'default';
+let statusLabel = ''
+const getStatusColor = (app: string) => {
+    if (app.workSupply === true ) { // В работе у снабжения
+        statusLabel = 'В работе у снабжения';
+        return 'success';
+    } else if (app.approvedForPurchase === false && app.cancellationPurchase === true) { // Согласование к закупке
+        statusLabel = 'Не согласован';
+        return 'error';
+    } else if (app.approvedForPurchase === false && app.expectationPurchase === true) { // Согласование к покупке
+        statusLabel = 'Отложено';
+        return 'warning';
+    }else if (app.approvedForPurchase === true) { // Согласование к покупке
+        statusLabel = 'Согласовано';
+        return 'success';
+    }else if (app.approvedForPurchase === false) { // Согласование к закупке
+        statusLabel = 'Ожидает согласования';
+        return 'default';
     }
+    // switch (status) {
+    //     case 'В работе':
+    //         return 'primary';
+    //     case 'Завершена':
+    //         return 'success';
+    //     case 'В ожидании':
+    //         return 'warning';
+    //     case 'На уточнении':
+    //         return 'error';
+    //     default:
+    //         return 'default';
+    // }
 };
 
-const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, status, item, quantity, unitMeasurement }) => {
+const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, app, items }) => {
     const isHighlight = status === 'На уточнении';
     const [isHovered, setIsHovered] = useState(false);
     const [openDialog, setOpenDialog] = useState(false);
@@ -82,6 +99,8 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, status,
     };
 
     const handleSaveEdit = async (updatedData: any) => {
+        console.log(updatedData);
+        
         await saveEditDataToDatabase(number, updatedData);
         setOpenDialog(false);
         setOpenSnackbar(true);
@@ -95,6 +114,25 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, status,
     const handleCloseSnackbar = () => {
         setOpenSnackbar(false);
     };
+    // Объект для сопоставления статусов с цветами
+    const statusColors = {
+        'Согласование к закупке': { background: '#f0f0f0', text: 'Ожидает согласования' },
+        'Согласован к закупке': { background: '#0008ff', text: 'Согласовано' },
+        'Согласование к оплате': { background: '#ccd71a', text: 'В работе у снабжения' },
+        'Согласован к оплате': { background: '#ccd71a', text: 'В работе у снабжения' },
+        'В работе': { background: '#ccd71a', text: 'В работе у снабжения' },
+        'Оплачен': { background: '#ccd71a', text: 'Оплачен' },
+        'Доставка': { background: '#ccd71a', text: 'Доставляется' },
+        'Доставлено': { background: '#00ff10', text: 'Доставлено' },
+        'Не согласовано': { background: '#db130b', text: 'Не согласовано' },
+        'Отложено': { background: '#ff5600', text: 'Отложено' },
+        'default': { background: '#f0f0f0', text: 'Не указан' }
+    };
+
+    // Функция для получения цвета и текста на основе статуса
+    const getStatusInfo = (status: string) => {
+        return statusColors[status] || statusColors['default'];
+    };
 
     return (
         <StyledCard
@@ -102,26 +140,76 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, status,
             highlight={isHighlight}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
+            sx={{
+                width: 'fit-content',  // Ширина подстраивается под контент
+                maxWidth: '100%',      // Ограничение по ширине
+                minWidth: '200px',     // Минимальная ширина для гибкости
+            }}
         >
             <CardContent>
                 <Box display="flex" flexDirection="column" mb={2}>
+                    {app.approvedForPurchase === false &&
+                        <Box display="flex" justifyContent='flex-end' >
+                            <IconButton
+
+                                color="#c56f00"
+                                aria-label="edit"
+                                onClick={handleEditClick}
+                            >
+                                <EditIcon />
+                            </IconButton>
+                        </Box>
+                    }
+
                     <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        <Typography variant="subtitle1" gutterBottom>
                             Заявка № {number}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                            Дата: {new Date(date).toLocaleDateString('ru-RU')}
+                            Дата создания заявки: {new Date(date).toLocaleDateString('ru-RU')}
                         </Typography>
 
                     </Box>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                        Заказ -  {`${item}.  Количество - ${quantity} ${unitMeasurement}`}
-                    </Typography>
+                    {items.map((item, index) => {
+                        const status = getStatusInfo(item.status.name);
+                        return (
+                            <Typography
+                                variant="subtitle2"
+                                gutterBottom
+                                sx={{
+                                    border: '1px solid #cacaca',
+                                    borderRadius: 50,
+                                    padding: '3px 12px',
+                                    display: 'flex',  // Используем flexbox
+                                    flexWrap: 'wrap', // Разрешаем перенос на следующую строку
+                                    alignItems: 'center', // Центрируем элементы по вертикали
+
+                                }}
+                            >
+                                Заказ - {item.item}. Количество - {item.quantity} {item.unitMeasurement}
+                                <Typography
+                                    variant="subtitle2"
+                                    sx={{
+                                        backgroundColor: status.background, // Цвет фона
+                                        color: 'black', // Цвет текста
+                                        border: '1px solid #888', // Рамка вокруг текста
+                                        borderRadius: 50, // Скругленные углы
+                                        padding: '3px 8px', // Отступы внутри текста
+                                        marginLeft: '8px', // Отступ слева для разделения
+                                        display: 'inline', // Чтобы текст "Статус" был в одной строке
+                                    }}
+                                >
+                                    Статус: {status.text}
+                                </Typography>
+                            </Typography>
+                        )
+                    })}
+
                 </Box>
                 <Box mt={1}>
                     <Chip
-                        label={status}
-                        color={getStatusColor(status)}
+                        label={statusLabel}
+                        color={getStatusColor(app)}
                         sx={{
                             fontSize: '0.75rem',
                             fontWeight: 'bold',
@@ -140,14 +228,6 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, status,
                             onClick={handleQuestionClick}
                         >
                             <MessageIcon />
-                        </IconButton>
-                        <IconButton
-                            sx={{ position: 'absolute', top: 8, right: 8 }}
-                            color="primary"
-                            aria-label="edit"
-                            onClick={handleEditClick}
-                        >
-                            <EditIcon />
                         </IconButton>
                     </>
                 )}
@@ -199,7 +279,7 @@ export default ApplicationCard;
 
 // Функции для взаимодействия с базой данных
 async function fetchEditDataFromDatabase(requestId: number): Promise<any> {
-    const response = await axios.get('/api/getRequestAplicationCard', {
+    const response = await axios.get('/api/personalCabinetPage/getRequestAplicationCard', {
         params: { requestId },
     });
     return response.data;
@@ -215,7 +295,7 @@ async function fetchQuestionFromDatabase(requestId: string): Promise<string | nu
 }
 
 async function saveEditDataToDatabase(applicationNumber: string, updatedData: any): Promise<void> {
-    const response = await axios.put('/api/getRequestAplicationCard', { applicationNumber, updatedData });
+    const response = await axios.put('/api/personalCabinetPage/getRequestAplicationCard', { applicationNumber, updatedData });
 }
 
 async function saveAnswerToDatabase(applicationNumber: string, answer: string): Promise<void> {

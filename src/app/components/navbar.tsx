@@ -57,11 +57,12 @@ const Navbar: React.FC = () => {
   const drawerList = () => (
     <List>
       {role === 'Руководство' && renderLink("/pages/applicationsTable", "Согласование")}
-      {(role === 'Снабжение' || role === 'Руководство') && renderLink("/pages/procurementPage", "Снабжение")}
-      {renderLink("/pages/createRequest", "Создание заявки")}
+      {(role === 'Снабжение' || role === 'Руководство') && renderLink("/pages/starie/procurementPage", "Снабжение")}
+      {renderLink("/pages/createApplications", "Создание заявки")}
       {role === 'Руководство' && renderLink("/pages/createUsers", "Создание пользователя")}
       {role === 'Руководство' && renderLink("/pages/admika", "Админка")}
       {renderLink("/pages/personalCabinet", "Личный кабинет")}
+      {renderLink("/pages/createApplications", "Новая форма заявки")}
       {role && (
         // @ts-ignore
         <ListItem button onClick={handleLogout}>
@@ -113,11 +114,12 @@ const Navbar: React.FC = () => {
             ) : (
               <>
                 {role === 'Руководство' && renderLink("/pages/applicationsTable", "Согласование")}
-                {(role === 'Снабжение' || role === 'Руководство') && renderLink("/pages/procurementPage", "Снабжение")}
-                {renderLink("/pages/createRequest", "Создание заявки")}
+                {(role === 'Снабжение' || role === 'Руководство') && renderLink("/pages/starie/procurementPage", "Снабжение")}
+                {renderLink("/pages/createApplications", "Создание заявки")}
                 {role === 'Руководство' && renderLink("/pages/createUsers", "Создание пользователя")}
                 {role === 'Руководство' && renderLink("/pages/admika", "Админка")}
                 {renderLink("/pages/personalCabinet", "Личный кабинет")}
+                {renderLink("/pages/createApplications", "Новая форма заявки")}
                 {role && (
                   <Button
                     color="inherit"

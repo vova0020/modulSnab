@@ -1,323 +1,460 @@
-'use client'
+'use client';
 /* eslint-disable */
 // @ts-nocheck
-import React, { useEffect, useState } from 'react';
-import { ruRU } from '@mui/x-data-grid/locales/ruRU';
-import { Box, Typography, MenuItem, Select, SelectChangeEvent } from '@mui/material';
+import { useState, useRef, useEffect } from 'react';
+import {
+  Grid,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Typography,
+  Card,
+  CardContent,
+  CssBaseline,
+  ThemeProvider,
+  createTheme,
+  Container,
+  TextField,
+  Button,
+  Drawer,
+  Box,
+} from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { yellow } from '@mui/material/colors';
+import ApplicationPage from '@/app/components/APPlicationPage';
 import axios from 'axios';
-import { GridColDef, DataGrid, GridRenderCellParams } from '@mui/x-data-grid';
 import Navbar from '@/app/components/navbar';
 
-type OrderRow = {
+// Типы данных заявок
+type Request = {
   id: number;
-  date: Date,
-  orderReason: string,
-  invoiceNumber: string,
-  status: string,
-  approvedForPurchase: boolean,
-  approvedForPayment: boolean,
-  creator: string,
-  itemsId: number,
-  itemsName: string,
-  itemsQuantity: number,
-  itemsAmount: number,
-  orderApprovalStatus: string;
-  purchaseApprovalStatus: string;
+  date: string;
+  status: string;
+  items,
+  expectationPurchase,
+  expectationPayment
 };
 
-const TablePage = () => {
-const soglasStatus = 'Согласовано'
-const otlojStatus = 'Отложено'
-const neSoglasStatus = 'Не согласовано'
+// Компонент с деталями заявки
+// const RequestDetailsPage: React.FC<{ requestId: number }> = ({ requestId }) => {
+//   return <ApplicationPage requestId={requestId} />;
+// };
 
-  const [rows, setRows] = useState<OrderRow[]>([]);
-  const fetchData = async () => {
+// Компонент для отображения заявок в аккордеонах
+const RequestBox: React.FC<{
+  title: string;
+  requests: Request[];
+  highlightedId: number | null;
+  expanded: boolean;
+  onAccordionToggle: () => void;
+  refProp: React.RefObject<HTMLDivElement>;
+  onRequestClick: (id: number, status: string, etap: string, items:any) => void;
+}> = ({
+  title,
+  requests,
+  highlightedId,
+  expanded,
+  onAccordionToggle,
+  refProp,
+  onRequestClick,
+}) => {
+    return (
+      <Accordion
+        sx={{ mb: 2, borderRadius: 2, boxShadow: 3 }}
+        expanded={expanded}
+        onChange={onAccordionToggle}
+        ref={refProp}
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          sx={{ bgcolor: 'primary.main', color: 'white', borderRadius: 1 }}
+        >
+          <Typography variant="h6">
+            {title} ({requests.length})
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Grid container spacing={2}>
+            {requests.map((req) => (
+
+              <Grid item xs={12} key={req.id}>
+                <Card
+                  sx={{
+                    boxShadow: 3,
+                    borderRadius: 2,
+                    bgcolor: highlightedId === req.id ? yellow[100] : req.expectationPurchase ? '#dbc20a' : '#f5f5f5' ,
+                  }}
+                // onClick={() => onRequestClick(req.id)}
+                >
+                  <CardContent>
+                  {req.expectationPurchase ?
+                      <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
+                      <Typography variant="body1">Заявка № {req.id}</Typography>
+                      <Typography variant="body2">
+                        Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
+                      </Typography>
+                      <Typography variant="body2">
+                        Статус: Отложено
+                      </Typography>
+                    </Box>
+                      :
+                      <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
+                      <Typography variant="body1">Заявка № {req.id}</Typography>
+                      <Typography variant="body2">
+                        Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
+                      </Typography>
+                    </Box>
+                    }
+                    
+                    <Grid>
+                      {req.items.map((item, index) => {
+                        return (
+                          <Typography
+                            variant="subtitle2"
+                            gutterBottom
+                            sx={{
+                              border: '1px solid #cacaca',
+                              borderRadius: 50,
+                              padding: '3px 12px',
+                              display: 'flex',  // Используем flexbox
+                              flexWrap: 'wrap', // Разрешаем перенос на следующую строку
+                              alignItems: 'center', // Центрируем элементы по вертикали
+
+                            }}
+                          >
+                            Заказ - {item.item}. Количество - {item.quantity} {item.unitMeasurement}
+
+                          </Typography>
+                        )
+                      })}
+                    </Grid>
+                    {req.expectationPurchase ?
+                      <Box display="flex" justifyContent="space-between" alignItems="center" marginTop="10px">
+
+                        <Button onClick={() => onRequestClick(req.id, 'Да', 'Закупка', req.items)} sx={{ backgroundColor: 'green', color: 'white' }}>Согласовать</Button>
+                        <Button onClick={() => onRequestClick(req.id, 'Нет', 'Закупка', req.items)} sx={{ backgroundColor: 'red', color: 'white' }}>Не согласовать</Button>
+                        {/* <Button onClick={() => onRequestClick(req.id, 'Отложить', 'Закупка', req.items)} sx={{ backgroundColor: 'orange', color: 'white' }}>Отложить</Button> */}
+                      </Box>
+                      :<Box display="flex" justifyContent="space-between" alignItems="center" marginTop="10px">
+                      
+                      <Button onClick={() => onRequestClick(req.id, 'Да', 'Закупка', req.items)} sx={{ backgroundColor: 'green', color: 'white' }}>Согласовать</Button>
+                      <Button onClick={() => onRequestClick(req.id, 'Нет', 'Закупка', req.items)} sx={{ backgroundColor: 'red', color: 'white' }}>Не согласовать</Button>
+                      <Button onClick={() => onRequestClick(req.id, 'Отложить', 'Закупка', req.items)} sx={{ backgroundColor: 'orange', color: 'white' }}>Отложить</Button>
+                    </Box>}
+                  
+
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </AccordionDetails>
+      </Accordion>
+    );
+  };
+  // Акордеон для второго блока
+  const RequestBox2: React.FC<{
+    title: string;
+    requests: Request[];
+    highlightedId: number | null;
+    expanded: boolean;
+    onAccordionToggle: () => void;
+    refProp: React.RefObject<HTMLDivElement>;
+    onRequestClick: (id: number, status: string, etap: string, items:any) => void;
+  }> = ({
+    title,
+    requests,
+    highlightedId,
+    expanded,
+    onAccordionToggle,
+    refProp,
+    onRequestClick,
+  }) => {
+      return (
+        <Accordion
+          sx={{ mb: 2, borderRadius: 2, boxShadow: 3 }}
+          expanded={expanded}
+          onChange={onAccordionToggle}
+          ref={refProp}
+        >
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            sx={{ bgcolor: 'primary.main', color: 'white', borderRadius: 1 }}
+          >
+            <Typography variant="h6">
+              {title} ({requests.length})
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Grid container spacing={2}>
+              {requests.map((req) => (
+  
+                <Grid item xs={12} key={req.id}>
+                  <Card
+                    sx={{
+                      boxShadow: 3,
+                      borderRadius: 2,
+                      bgcolor: highlightedId === req.id ? yellow[100] : req.expectationPurchase ? '#dbc20a' : '#f5f5f5' ,
+                    }}
+                  // onClick={() => onRequestClick(req.id)}
+                  >
+                    <CardContent>
+                    {req.expectationPayment ?
+                        <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
+                        <Typography variant="body1">Заявка № {req.id}</Typography>
+                        <Typography variant="body2">
+                          Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
+                        </Typography>
+                        <Typography variant="body2">
+                          Статус: Отложено
+                        </Typography>
+                      </Box>
+                        :
+                        <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
+                        <Typography variant="body1">Заявка № {req.id}</Typography>
+                        <Typography variant="body2">
+                          Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
+                        </Typography>
+                      </Box>
+                      }
+                      
+                      <Grid>
+                        {req.items.map((item, index) => (
+                         
+                            <Typography
+                              variant="subtitle2"
+                              gutterBottom
+                              sx={{
+                                border: '1px solid #cacaca',
+                                borderRadius: 50,
+                                padding: '3px 12px',
+                                display: 'flex',  // Используем flexbox
+                                flexWrap: 'wrap', // Разрешаем перенос на следующую строку
+                                alignItems: 'center', // Центрируем элементы по вертикали
+  
+                              }}
+                            >
+                              Заказ - {item.item}. Количество - {item.quantity} {item.unitMeasurement}. Сумма - {item.amount}. 
+                              Дата доставки:  {new Date(item.deliveryDeadline).toLocaleDateString('ru-RU')}. 
+                              Поставщик:  {item.provider}
+  
+                            </Typography>
+                          )
+                        )}
+                      </Grid>
+                      {req.expectationPayment ?
+                        <Box display="flex" justifyContent="space-between" alignItems="center" marginTop="10px">
+  
+                          <Button onClick={() => onRequestClick(req.id, 'Да', 'Покупка', req.items)} sx={{ backgroundColor: 'green', color: 'white' }}>Согласовать</Button>
+                          <Button onClick={() => onRequestClick(req.id, 'Нет', 'Покупка', req.items)} sx={{ backgroundColor: 'red', color: 'white' }}>Не согласовать</Button>
+                          {/* <Button onClick={() => onRequestClick(req.id, 'Отложить', 'Закупка', req.items)} sx={{ backgroundColor: 'orange', color: 'white' }}>Отложить</Button> */}
+                        </Box>
+                        :<Box display="flex" justifyContent="space-between" alignItems="center" marginTop="10px">
+                        
+                        <Button onClick={() => onRequestClick(req.id, 'Да', 'Покупка', req.items)} sx={{ backgroundColor: 'green', color: 'white' }}>Согласовать</Button>
+                        <Button onClick={() => onRequestClick(req.id, 'Нет', 'Покупка', req.items)} sx={{ backgroundColor: 'red', color: 'white' }}>Не согласовать</Button>
+                        <Button onClick={() => onRequestClick(req.id, 'Отложить', 'Покупка', req.items)} sx={{ backgroundColor: 'orange', color: 'white' }}>Отложить</Button>
+                      </Box>}
+                    
+  
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </AccordionDetails>
+        </Accordion>
+      );
+    };
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#1976d2',
+    },
+    secondary: {
+      main: '#f50057',
+    },
+    background: {
+      default: '#f5f5f5',
+    },
+  },
+  typography: {
+    fontFamily: 'Roboto, sans-serif',
+    h6: {
+      fontWeight: 600,
+    },
+  },
+});
+
+const RequestsPage: React.FC = () => {
+  const [searchValue, setSearchValue] = useState<string>('');
+  const [highlightedRequestId, setHighlightedRequestId] = useState<number | null>(null);
+  const [openAccordionIndex, setOpenAccordionIndex] = useState<number | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
+  const [requestsData, setRequestsData] = useState<{
+    newRequests: Request[];
+    inProgress: Request[];
+
+
+    // completed: Request[];
+  }>({
+    newRequests: [],
+    inProgress: [],
+
+
+    // completed: [],
+  });
+
+  // Refs для аккордеонов
+  const accordionRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Получение данных о заявках с сервера
+  const fetchRequests = async () => {
     try {
-      const response = await axios.get('/api/aplicationsTable');
-      const sortedData = response.data.sort((a, b) => a.id - b.id); // Сортировка по возрастанию поля 'id'
-      setRows(sortedData);
+      const response = await axios.get('/api/aplicationsTable'); // Укажите реальный URL
+      const data: Request[] = response.data;
+      console.log(data);
+
+      const newRequests = data
+
+        // @ts-ignore
+        .filter(req => req.approvedForPurchase === false && req.cancellationPurchase === false)
+        .sort((a, b) => a.id - b.id);
+      const inProgress = data
+        // @ts-ignore
+        .filter(req => req.approvedForPayment === false && req.approvedForPurchase === true && req.sendSupplyApproval === true && req.cancellationPayment === false)
+        .sort((a, b) => a.id - b.id);
+
+      // const completed = data
+      // // @ts-ignore
+      //   .filter(req => req.status.name === 'Завершена')
+      //   .sort((a, b) => a.id - b.id);
+
+      setRequestsData({
+        newRequests,
+        inProgress,
+
+
+        // completed,
+      });
     } catch (error) {
-      console.error('Ошибка при загрузке данных:', error);
+      console.error('Ошибка при загрузке заявок:', error);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    fetchRequests();
     const intervalId = setInterval(() => {
-      fetchData(); // Обновляем данные
-    }, 4000); // Обновляем каждые 5 секунд
-
-    // Очищаем интервал при размонтировании компонента
+      fetchRequests();
+    }, 4000);
     return () => clearInterval(intervalId);
-   
   }, []);
-  
 
-  const handleApprovalChange = async (id: number, field: string, value: string) => {
-    // Обновляем состояние локально
-    setRows((prevRows) =>
-      prevRows.map((row) =>
-        row.id === id ? { ...row, [field]: value } : row
-      )
-    );
+  async function handleRequestClick(requestId: number, status: string, etap: string, items: any) {
+    // console.log(requestId);
 
-    // Отправляем данные на сервер
-    try {
-      await axios.put('/api/aplicationsTable', { id, field, value });
-      console.log('Данные успешно обновлены');
-      fetchData()
-    } catch (error) {
-      console.error('Ошибка при обновлении данных:', error);
-      // Здесь можно добавить уведомление для пользователя о том, что произошла ошибка
-    }
+    const response = await axios.put('/api/aplicationsTable', { requestId, status, etap, items })
+    fetchRequests()
+    // setDrawerOpen(true);
   };
 
-  // Обработчик для изменений в других ячейках (например, itemsQuantity, itemsAmount и invoiceNumber)
-  const handleCellEditCommit = async (params) => {
-    console.log(params); // Проверка вызова функции
+  const accordionIndexMap: { [key: string]: number } = {
+    newRequests: 0,
+    inProgress: 1,
 
-
-    const updateData = params
-
-    try {
-      // Отправляем PUT-запрос для обновления значения в базе данных
-      const response = await axios.put('/api/tableUpdate', { updateData });
-      console.log('Ответ от сервера:', response.data); // Проверка ответа от сервера
-
-
-      console.log(`Поле ${params.id} успешно обновлено`);
-      fetchData()
-    } catch (error) {
-      console.error('Ошибка при обновлении поля:', error);
-    }
   };
+  const handleSearch = () => {
+    const requestId = parseInt(searchValue, 10);
+    if (!isNaN(requestId)) {
+      setHighlightedRequestId(requestId);
+      setOpenAccordionIndex(null); // Сбрасываем раскрытие аккордеонов
 
+      const requestCategory = Object.keys(requestsData).find(category =>
+        requestsData[category as keyof typeof requestsData].some(req => req.id === requestId)
+      );
 
+      if (requestCategory) {
+        const categoryIndex = accordionIndexMap[requestCategory];
+        setOpenAccordionIndex(categoryIndex); // Открываем нужный аккордеон
 
-
-  const columns: GridColDef[] = [
-    { field: 'id', headerName: '№', width: 10 },
-    { field: 'creator', headerName: 'Кто', width: 140 },
-    { field: 'itemsName', headerName: 'Что', editable: true, width: 150 },
-    { field: 'itemsQuantity', headerName: 'Кол', type: 'number', editable: true, width: 150 },
-    { field: 'orderReason', headerName: 'Зачем', width: 250 },
-    {
-      field: 'soglZakaz',
-      headerName: 'Согласовать к заказу',
-      width: 200,
-      renderCell: (params: GridRenderCellParams) => (
-        <div
-          style={{
-            backgroundColor:
-              params.row.approvedForPurchase ? '#81ff00' :
-                params.row.status === otlojStatus ? '#ffa700' :
-                  params.row.status === neSoglasStatus ? '#4e4e4e' :
-                    'inherit',
-            // Зеленый цвет для согласованного статуса
-            // margin: '8px',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          {params.row.approvedForPurchase ? (
-            soglasStatus
-          ) : (params.row.status == otlojStatus ? (
-            <Select
-              value={params.value || ''}
-              onChange={(event: SelectChangeEvent) =>
-                handleApprovalChange(params.id as number, 'soglZakaz', event.target.value)
-              }
-              displayEmpty
-              sx={{ width: '100%', fontSize: 14 }}
-            >
-              <MenuItem value="" disabled>
-                {otlojStatus}
-              </MenuItem>
-              <MenuItem value="Да">Да</MenuItem>
-              <MenuItem value="Нет">Нет</MenuItem>
-              <MenuItem value="Отложить">Отложить</MenuItem>
-            </Select>
-          ) : (params.row.status == neSoglasStatus ? (
-            <Select
-              value={params.value || ''}
-              onChange={(event: SelectChangeEvent) =>
-                handleApprovalChange(params.id as number, 'soglOplata', event.target.value)
-              }
-              displayEmpty
-              sx={{ width: '100%', fontSize: 14 }}
-            >
-              <MenuItem value="" disabled>
-                {neSoglasStatus}
-              </MenuItem>
-              <MenuItem value="Да">Да</MenuItem>
-              <MenuItem value="Нет">Нет</MenuItem>
-              <MenuItem value="Отложить">Отложить</MenuItem>
-            </Select>
-          ) : (
-            <Select
-              value={params.value || ''}
-              onChange={(event: SelectChangeEvent) =>
-                handleApprovalChange(params.id as number, 'soglZakaz', event.target.value)
-              }
-              displayEmpty
-              sx={{ width: '100%', fontSize: 14 }}
-            >
-              <MenuItem value="" disabled>
-                Выбрать значение
-              </MenuItem>
-              <MenuItem value="Да">Да</MenuItem>
-              <MenuItem value="Нет">Нет</MenuItem>
-              <MenuItem value="Отложить">Отложить</MenuItem>
-            </Select>
-          ))
-
-          )}
-        </div>
-      ),
-    },
-
-
-    { field: 'invoiceNumber', headerName: 'Счет №', editable: true, width: 150 },
-    { field: 'itemsAmount', headerName: 'Сумма', editable: true, width: 150 },
-    {
-      field: 'soglOplata',
-      headerName: 'Согласовать покупку',
-      width: 200,
-      renderCell: (params: GridRenderCellParams) => (
-        <div
-          style={{
-            backgroundColor:
-              params.row.approvedForPayment ? '#81ff00' :
-                params.row.status === otlojStatus ? '#ffa700' :
-                  params.row.status === neSoglasStatus ? '#4e4e4e' :
-                    'inherit', // Зеленый цвет для согласованного статуса
-            // margin: '8px',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          {params.row.approvedForPayment ? (
-            soglasStatus
-          ) : (params.row.status == otlojStatus ? (
-            <Select
-              value={params.value || ''}
-              onChange={(event: SelectChangeEvent) =>
-                handleApprovalChange(params.id as number, 'soglOplata', event.target.value)
-              }
-              displayEmpty
-              sx={{ width: '100%', fontSize: 14 }}
-            >
-              <MenuItem value="" disabled>
-                {otlojStatus}
-              </MenuItem>
-              <MenuItem value="Да">Да</MenuItem>
-              <MenuItem value="Нет">Нет</MenuItem>
-              <MenuItem value="Отложить">Отложить</MenuItem>
-            </Select>
-          ) : (params.row.status == neSoglasStatus ? (
-            <Select
-              value={params.value || ''}
-              onChange={(event: SelectChangeEvent) =>
-                handleApprovalChange(params.id as number, 'soglOplata', event.target.value)
-              }
-              displayEmpty
-              sx={{ width: '100%', fontSize: 14 }}
-            >
-              <MenuItem value="" disabled>
-                {neSoglasStatus}
-              </MenuItem>
-              <MenuItem value="Да">Да</MenuItem>
-              <MenuItem value="Нет">Нет</MenuItem>
-              <MenuItem value="Отложить">Отложить</MenuItem>
-            </Select>
-          ) : (
-            <Select
-              value={params.value || ''}
-              onChange={(event: SelectChangeEvent) =>
-                handleApprovalChange(params.id as number, 'soglOplata', event.target.value)
-              }
-              displayEmpty
-              sx={{ width: '100%', fontSize: 14 }}
-            >
-              <MenuItem value="" disabled>
-                Выбрать значение
-              </MenuItem>
-              <MenuItem value="Да">Да</MenuItem>
-              <MenuItem value="Нет">Нет</MenuItem>
-              <MenuItem value="Отложить">Отложить</MenuItem>
-            </Select>
-          ))
-
-          )}
-        </div>
-      ),
-    },
-  ];
+        // Прокрутка к аккордеону
+        accordionRefs.current[categoryIndex]?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }
+    }
+    setSearchValue('')
+  };
 
   return (
-    <Box
-      sx={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        padding: 2,
-        backgroundColor: '#f5f5f7',
-        boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)',
-      }}
-    >
+    <div>
       <Navbar />
-      <Typography variant="h5" component="h2" sx={{ marginBottom: 2 }}>
-        Таблица заявок
-      </Typography>
-      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          pageSize={5}
-          rowsPerPageOptions={[5]}
-          localeText={ruRU.components.MuiDataGrid.defaultProps.localeText}
-          // @ts-ignore
-          experimentalFeatures={{ newEditingApi: true }}
-          processRowUpdate={handleCellEditCommit}
-          getRowId={(row) => row.id} 
-          onProcessRowUpdateError={(error) => {
-            console.error("Ошибка при обновлении строки:", error);
-            // Здесь можно добавить уведомление для пользователя об ошибке
-          }}
-          sx={{
-            '& .MuiDataGrid-root': {
-              borderRadius: '8px',
-              border: 'none',
-              boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.15)',
-            },
-            '& .MuiDataGrid-columnHeaders': {
-              backgroundColor: '#f0f0f0',
-              color: '#333',
-              fontWeight: 'bold',
-            },
-            '& .MuiDataGrid-cell': {
-              borderBottom: '1px solid #e0e0e0',
-              padding: '8px 16px', // Уменьшенные отступы для оптимального отображения
-              fontSize: '14px', // Размер текста для улучшенного восприятия
-            },
-            '& .MuiDataGrid-row': {
-              // maxHeight: '60px', // Высота строки для улучшенного отображения
-            },
-            '& .MuiDataGrid-row:hover': {
-              backgroundColor: '#e9f7ff',
-            },
-            '& .MuiDataGrid-footerContainer': {
-              backgroundColor: '#f0f0f0',
-            },
-          }}
-        />
-      </Box>
-    </Box>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Container sx={{
+          mt: 5,
+          border: '1px solid #888888',   // Немного темнее для контраста
+          backgroundColor: '#fcfcfc',
+          padding: 2,
+          borderRadius: 4,               // Закругленные углы
+          // boxShadow: '5px 5px 10px rgba(0, 0, 0, 0.2), -5px -5px 10px rgba(255, 255, 255, 0.5)',  // Эффект выпуклости
+          boxShadow: '-10px -10px 30px #FFFFFF, 10px 10px 30px rgba(174, 174, 192, 0.5)',
+        }}>
+          <Box display="flex" alignItems="center" justifyContent="center" sx={{ mb: 4 }}>
+            <TextField
+              label="Поиск по номеру заявки"
+              variant="outlined"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              sx={{ mb: 0 }} // Убираем отступ снизу для TextField
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSearch}
+              sx={{ ml: 2 }} // Отступ слева для кнопки
+            >
+              Найти
+            </Button>
+          </Box>
+
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={6}>
+              <RequestBox
+                title="Согласование к закупке"
+                requests={requestsData.newRequests}
+                highlightedId={highlightedRequestId}
+                expanded={openAccordionIndex === 0}
+                onAccordionToggle={() => setOpenAccordionIndex(openAccordionIndex === 0 ? null : 0)}
+                // @ts-ignore
+                refProp={(el) => (accordionRefs.current[0] = el)}
+                onRequestClick={handleRequestClick}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <RequestBox2
+                title="Согласование к покупке"
+                requests={requestsData.inProgress}
+                highlightedId={highlightedRequestId}
+                expanded={openAccordionIndex === 1}
+                onAccordionToggle={() => setOpenAccordionIndex(openAccordionIndex === 1 ? null : 1)}
+                // @ts-ignore
+                refProp={(el) => (accordionRefs.current[1] = el)}
+                onRequestClick={handleRequestClick}
+              />
+            </Grid>
+
+          </Grid>
+
+
+        </Container>
+      </ThemeProvider>
+    </div>
   );
 };
 
-export default TablePage;
+export default RequestsPage;
