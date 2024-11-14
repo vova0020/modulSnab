@@ -40,7 +40,7 @@ const PersonalCabinetPage: React.FC = () => {
                 });
                 const sortedData = response.data.sort((a: any, b: any) => a.id - b.id);
                 setData(sortedData);
-                console.log(sortedData);
+                // console.log(sortedData);
                 
             }
         } catch (error) {

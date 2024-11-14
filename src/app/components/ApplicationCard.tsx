@@ -46,7 +46,14 @@ const StyledCard = styled(Card)(({ theme, highlight }: { highlight?: boolean }) 
 
 let statusLabel = ''
 const getStatusColor = (app: string) => {
-    if (app.workSupply === true ) { // В работе у снабжения
+    // console.log(app?.status?.name);
+
+    if (app?.status?.name === 'На уточнении') {
+        statusLabel = 'Нужно уточнение';
+        return 'warning';
+
+    }
+    if (app.workSupply === true) { // В работе у снабжения
         statusLabel = 'В работе у снабжения';
         return 'success';
     } else if (app.approvedForPurchase === false && app.cancellationPurchase === true) { // Согласование к закупке
@@ -55,13 +62,14 @@ const getStatusColor = (app: string) => {
     } else if (app.approvedForPurchase === false && app.expectationPurchase === true) { // Согласование к покупке
         statusLabel = 'Отложено';
         return 'warning';
-    }else if (app.approvedForPurchase === true) { // Согласование к покупке
+    } else if (app.approvedForPurchase === true) { // Согласование к покупке
         statusLabel = 'Согласовано';
         return 'success';
-    }else if (app.approvedForPurchase === false) { // Согласование к закупке
+    } else if (app.approvedForPurchase === false) { // Согласование к закупке
         statusLabel = 'Ожидает согласования';
         return 'default';
     }
+
     // switch (status) {
     //     case 'В работе':
     //         return 'primary';
@@ -94,20 +102,22 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, app, it
 
     const handleQuestionClick = async () => {
         const fetchedQuestion = await fetchQuestionFromDatabase(number);
-        setQuestion(fetchedQuestion.question);
+        console.log(fetchedQuestion);
+
+        setQuestion(fetchedQuestion);
         setOpenQuestionDialog(true);
     };
 
     const handleSaveEdit = async (updatedData: any) => {
-        console.log(updatedData);
-        
+        // console.log(updatedData);
+
         await saveEditDataToDatabase(number, updatedData);
         setOpenDialog(false);
         setOpenSnackbar(true);
     };
 
     const handleSaveAnswer = async () => {
-        await saveAnswerToDatabase(number, answer);
+        await saveAnswerToDatabase(number, answer, question, app.creatorId);
         setOpenQuestionDialog(false);
     };
 
@@ -126,6 +136,8 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, app, it
         'Доставлено': { background: '#00ff10', text: 'Доставлено' },
         'Не согласовано': { background: '#db130b', text: 'Не согласовано' },
         'Отложено': { background: '#ff5600', text: 'Отложено' },
+        'На уточнении': { background: '#ff5600', text: 'Нужно уточнить' },
+        'Новая': { background: '#f0f0f0', text: 'Отправлена в снабжение' },
         'default': { background: '#f0f0f0', text: 'Не указан' }
     };
 
@@ -160,6 +172,22 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, app, it
                             </IconButton>
                         </Box>
                     }
+                    {app?.status?.name === 'На уточнении' && (
+                        <>
+                            <Box display="flex" justifyContent='flex-end' >
+                                <IconButton
+                                    // sx={{ position: 'absolute', top: 8, right: 48 }}
+                                    color="primary"
+                                    aria-label="message"
+                                    onClick={handleQuestionClick}
+                                >
+                                    <MessageIcon />
+                                </IconButton>
+
+                            </Box>
+
+                        </>
+                    )}
 
                     <Box display="flex" justifyContent="space-between" alignItems="center">
                         <Typography variant="subtitle1" gutterBottom>
@@ -219,18 +247,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, app, it
                     />
                 </Box>
 
-                {isHovered && isHighlight && (
-                    <>
-                        <IconButton
-                            sx={{ position: 'absolute', top: 8, right: 48 }}
-                            color="primary"
-                            aria-label="message"
-                            onClick={handleQuestionClick}
-                        >
-                            <MessageIcon />
-                        </IconButton>
-                    </>
-                )}
+                {/* Редактирование */}
             </CardContent>
             <EditApplicationDialog
                 open={openDialog}
@@ -238,11 +255,14 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, app, it
                 selectedApplication={editData}
                 onSave={handleSaveEdit}
             />
+            {/* Уточнение */}
             <Dialog open={openQuestionDialog} onClose={() => setOpenQuestionDialog(false)}>
                 <DialogTitle>Вопрос для уточнения</DialogTitle>
                 <DialogContent>
-                    <DialogContentText>{`Уточнить: ${question || 'Загрузка вопроса...'}`}</DialogContentText>
-                    {/* <TextField
+                    <DialogContentText sx={{ fontWeight: 'bold', color: 'black', fontSize: '1.1rem' }}>
+                        {`Уточнить: ${question?.question || 'Загрузка вопроса...'}`}
+                    </DialogContentText>
+                    <TextField
                         autoFocus
                         margin="dense"
                         label="Ваш ответ"
@@ -250,7 +270,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, app, it
                         variant="outlined"
                         value={answer}
                         onChange={(e) => setAnswer(e.target.value)}
-                    /> */}
+                    />
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setOpenQuestionDialog(false)} color="primary">
@@ -258,6 +278,9 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, app, it
                     </Button>
                     <Button onClick={handleSaveAnswer} color="primary">
                         Отправить
+                    </Button>
+                    <Button onClick={handleEditClick} color="primary">
+                        Редактировать
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -289,7 +312,7 @@ async function fetchQuestionFromDatabase(requestId: string): Promise<string | nu
     const response = await axios.get('/api/getClarification', {
         params: { requestId },
     });
-    console.log(response.data);
+    // console.log(response.data);
 
     return response.data;
 }
@@ -298,6 +321,7 @@ async function saveEditDataToDatabase(applicationNumber: string, updatedData: an
     const response = await axios.put('/api/personalCabinetPage/getRequestAplicationCard', { applicationNumber, updatedData });
 }
 
-async function saveAnswerToDatabase(applicationNumber: string, answer: string): Promise<void> {
+async function saveAnswerToDatabase(applicationNumber: string, answer: string, question: any, userId): Promise<void> {
     console.log(`Сохранение ответа для заявки №${applicationNumber}: ${answer}`);
+    const response = await axios.put('/api/personalCabinetPage/putAnswerAplicationCard', { applicationNumber, answer, question, userId });
 }

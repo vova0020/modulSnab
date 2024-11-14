@@ -371,7 +371,7 @@ export default function Applications() {
                                     onChange={(e) => setSubPurpose(e.target.value as string)}
                                 >
                                     <MenuItem value="Для оборудования">Для оборудования</MenuItem>
-                                    <MenuItem value="Для модулей">Для модулей</MenuItem>
+                                    <MenuItem value="Для задания">Для задания</MenuItem>
                                     <MenuItem value="Для рабочего места">Для рабочего места</MenuItem>
                                     <MenuItem value="Для офиса">Для офиса</MenuItem>
                                     <MenuItem value="Для потока производства">Для потока производства</MenuItem>

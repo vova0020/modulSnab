@@ -47,10 +47,11 @@ const EditApplicationDialog: React.FC<EditApplicationDialogProps> = ({ open, onC
         await onSave(editedData);
         onClose();
     };
+   
 
     return (
         <Dialog open={open} onClose={onClose}>
-            <DialogTitle>Редактирование заявки № {editedData?.number}</DialogTitle>
+            <DialogTitle>Редактирование заявки № {editedData?.id}</DialogTitle>
             <DialogContent>
                 <Box sx={{ flex: '2', padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '12px', boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)', border: '1px solid #ddd' }}>
                     {/* Основные данные заявки */}

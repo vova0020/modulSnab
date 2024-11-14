@@ -288,6 +288,12 @@ export default class prismaInteraction {
               }
             }
           },
+          status: {
+            select: {
+              id: true,
+              name: true,
+            }
+          }
         },
       });
       // console.log(JSON.stringify(requestData, null, 2));
@@ -347,6 +353,7 @@ export default class prismaInteraction {
       const requestData = await prisma.request.findFirst({
         where: { id: requestId },
         include: {
+          status: true,
           items: {
             include: {
               status: {
@@ -357,8 +364,11 @@ export default class prismaInteraction {
               }
             }
           },
+
         },
       });
+      console.log(requestData);
+
 
       return requestData;
     } catch (error) {
@@ -392,6 +402,62 @@ export default class prismaInteraction {
       );
 
       await Promise.all(updatedItems);
+      return {
+        requestUpdate,
+      };
+    } catch (error) {
+      console.error('Ошибка при получении списка заявок:', error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+  // Внесение изменений в запись в личном кабинете
+  async putAnswerAplicationCard(applicationNumber: number, answer: any, question: any, userId: number) {
+    try {
+      // Обновление коментария
+        const сlarification = await prisma.clarificationResponse.create({
+
+          data: {
+            responseText: answer,
+            clarification: {
+              connect: { id: question.id },
+            },
+            user: {
+              connect: { id: userId },
+            },
+          },
+        });
+
+      // Обновление статуса заявки
+      const requestUpdate = await prisma.request.update({
+        where: { id: Number(applicationNumber) },
+        data: {
+          status: {
+            connect: { id: 1 }, // статус новая
+          },
+        },
+      });
+      // Получаем все RequestItem, связанные с запросом
+      const requestItems = await prisma.requestItem.findMany({
+        where: { requestId: Number(applicationNumber) },
+      });
+
+      // Обновляем поле status для каждого RequestItem в отдельном запросе
+      await Promise.all(
+        requestItems.map((item) =>
+          prisma.requestItem.update({
+            where: { id: item.id },
+            data: {
+              status: {
+                connect: { id: 1 },
+              },
+            },
+          })
+        )
+      );
+
+    
       return {
         requestUpdate,
       };
@@ -441,6 +507,12 @@ export default class prismaInteraction {
               },
             },
           },
+          status: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
 
           // creator: {
           //   select: {
@@ -467,20 +539,21 @@ export default class prismaInteraction {
 
   // Внесение изменений от снабжения
   async putRequestSnabData(id: number, statusPut: number, question: string) {
+    let requestItems; // Инициализация переменной вне блоков
+    let clarification; // Инициализация переменной для clarification
+
     try {
       if (statusPut === 4) {
         // Обновление статуса заявки
-        const requestUpdate = await prisma.request.update({
+        await prisma.request.update({
           where: { id: Number(id) },
           data: {
             workSupply: true
-            // status: {
-            //   connect: { id: statusPut }
-            // },
           },
         });
+
         // Получаем все RequestItem, связанные с запросом
-        const requestItems = await prisma.requestItem.findMany({
+        requestItems = await prisma.requestItem.findMany({
           where: { requestId: Number(id) },
         });
 
@@ -491,93 +564,108 @@ export default class prismaInteraction {
               where: { id: item.id },
               data: {
                 status: {
-                  connect: { id: statusPut }, // Замените `statusId` на идентификатор статуса, который хотите присвоить
+                  connect: { id: statusPut },
                 },
               },
             })
           )
         );
-        return {
-          requestItems,
-          // clarification
-        };
       } else if (statusPut === 9) {
         // Обновление статуса заявки
-        const requestUpdate = await prisma.request.update({
+        await prisma.request.update({
           where: { id: Number(id) },
           data: {
             workSupply: false,
-            closed: true
-            // status: {
-            //   connect: { id: statusPut }
-            // },
+            closed: true,
+            status: {
+              connect: { id: statusPut }
+            },
           },
         });
-        // Обновляем данные во всех связанных RequestItem
+
         // Получаем все RequestItem, связанные с запросом
-        const requestItems = await prisma.requestItem.findMany({
+        requestItems = await prisma.requestItem.findMany({
           where: { requestId: Number(id) },
         });
 
-        // Обновляем поле status для каждого RequestItem в отдельном запросе
+        // Обновляем поле status для каждого RequestItem
         await Promise.all(
           requestItems.map((item) =>
             prisma.requestItem.update({
               where: { id: item.id },
               data: {
                 status: {
-                  connect: { id: statusPut }, // Замените `statusId` на идентификатор статуса, который хотите присвоить
+                  connect: { id: statusPut },
                 },
               },
             })
           )
         );
-          return {
-          requestItems,
-          // clarification
-        };
-        
       } else {
-        const requestItems = await prisma.requestItem.findMany({
+        // Получаем все RequestItem, связанные с запросом
+        requestItems = await prisma.requestItem.findMany({
           where: { requestId: Number(id) },
         });
-        
-        // Обновляем поле status для каждого RequestItem в отдельном запросе
+
+        // Обновляем поле status для каждого RequestItem
         await Promise.all(
           requestItems.map((item) =>
             prisma.requestItem.update({
               where: { id: item.id },
               data: {
                 status: {
-                  connect: { id: statusPut }, // Замените `statusId` на идентификатор статуса, который хотите присвоить
+                  connect: { id: statusPut },
                 },
               },
             })
           )
         );
-        return {
-          requestItems,
-          // clarification
-        };
       }
-
 
       if (question !== undefined && question.trim() !== "") {
         // Создание записи о уточнении
-        const clarification = await prisma.clarification.create({
+        clarification = await prisma.clarification.create({
           data: {
-            requestId: id, // Идентификатор заявки
-            question: question // Текст уточнения
+            requestId: id,
+            question: question
           }
         });
-        return {
-          // requestUpdate,
-          clarification
-        };
+
+        // Обновляем статус заявки
+        await prisma.request.update({
+          where: { id: Number(id) },
+          data: {
+            status: {
+              connect: { id: statusPut }
+            },
+          },
+        });
+
+        // Получаем все RequestItem, связанные с запросом
+        requestItems = await prisma.requestItem.findMany({
+          where: { requestId: Number(id) },
+        });
+
+        // Обновляем поле status для каждого RequestItem
+        await Promise.all(
+          requestItems.map((item) =>
+            prisma.requestItem.update({
+              where: { id: item.id },
+              data: {
+                status: {
+                  connect: { id: statusPut },
+                },
+              },
+            })
+          )
+        );
       }
 
+      return {
+        requestItems,
+        clarification
+      };
 
-      
     } catch (error) {
       console.error('Ошибка при получении списка заявок:', error);
       throw error;
@@ -586,7 +674,34 @@ export default class prismaInteraction {
     }
   }
 
-//  Отправка на согласование от снабжения
+  // Внесение изменений в статус от снабжения
+  async putStatusSnabData(id: number, statusPut: number, itemId: number) {
+    try {
+      console.log(itemId);
+
+      // Обновление статуса заявки
+      const requestUpdate = await prisma.requestItem.update({
+        where: { id: Number(itemId) },
+        data: {
+          // workSupply: true
+          status: {
+            connect: { id: statusPut }
+          },
+        },
+      });
+
+      return requestUpdate
+
+
+    } catch (error) {
+      console.error('Ошибка при получении списка заявок:', error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+
+  //  Отправка на согласование от снабжения
   async putRequestSnab(requestId: number, updatedData: number) {
     try {
       console.log(updatedData);

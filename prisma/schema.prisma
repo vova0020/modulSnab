@@ -60,6 +60,8 @@ model Request {
   creatorId            Int?
   otdelId              Int?
   sectorId             Int?
+  statusId             Int?
+  status               Status?         @relation(fields: [statusId], references: [id], onDelete: Cascade) // Каскадное удаление
   creator              User?           @relation(fields: [creatorId], references: [id], onDelete: Cascade) // Каскадное удаление
   otdel                Otdel?          @relation(fields: [otdelId], references: [id], onDelete: Cascade) // Каскадное удаление
   sector               Sector?         @relation(fields: [sectorId], references: [id], onDelete: Cascade) // Каскадное удаление
@@ -92,6 +94,7 @@ model Status {
   name          String // Название статуса
   requestsItem  RequestItem[] // Один статус может быть у нескольких заявок
   statusHistory StatusHistory[] // Используется в истории статусов
+  Request       Request[]
 }
 
 model Clarification {

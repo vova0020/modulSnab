@@ -36,7 +36,10 @@ type Request = {
   items: any;
   id: number;
   date: string;
-  status: string;
+  status:{
+    name:string;
+    id:number;
+  };
   expectationPurchase;
 };
 
@@ -66,24 +69,27 @@ const RequestBox: React.FC<{
   refProp,
   onRequestClick,
 }) => {
-  const statusColors = {
-    'Согласование к закупке': { background: '#f0f0f0', text: 'Ожидает согласования' },
-    'Согласован к закупке': { background: '#0008ff', text: 'Согласовано' },
-    'Согласование к оплате': { background: '#ccd71a', text: 'Согласование к оплате' },
-    'Согласован к оплате': { background: '#ccd71a', text: 'Согласован к оплате' },
-    'В работе': { background: '#ccd71a', text: 'В работе' },
-    'Оплачен': { background: '#ccd71a', text: 'Оплачен' },
-    'Доставка': { background: '#ccd71a', text: 'Доставляется' },
-    'Доставлено': { background: '#00ff10', text: 'Доставлено' },
-    'Не согласовано': { background: '#db130b', text: 'Не согласовано' },
-    'Отложено': { background: '#ff5600', text: 'Отложено' },
-    'default': { background: '#f0f0f0', text: 'Не указан' }
-  };
-  
-  // Функция для получения цвета и текста на основе статуса
-  const getStatusInfo = (status: string) => {
-    return statusColors[status] || statusColors['default'];
-  };
+    const statusColors = {
+      'Согласование к закупке': { background: '#f0f0f0', text: 'Ожидает согласования' },
+      'Согласован к закупке': { background: '#0008ff', text: 'Согласован к закупке' },
+      'Согласование к оплате': { background: '#ccd71a', text: 'Согласование к оплате' },
+      'Согласован к оплате': { background: '#ccd71a', text: 'Согласован к оплате' },
+      'В работе': { background: '#ccd71a', text: 'В работе' },
+      'Оплачен': { background: '#ccd71a', text: 'Оплачен' },
+      'Доставка': { background: '#ccd71a', text: 'Доставляется' },
+      'Доставлено': { background: '#00ff10', text: 'Доставлено' },
+      'Не согласовано': { background: '#db130b', text: 'Не согласовано' },
+      'Отложено': { background: '#ff5600', text: 'Отложено' },
+      'Завершена': { background: '#2dff00', text: 'Завершена' },
+      'На уточнении': { background: '#dc9d4d', text: 'На уточнении' },
+      'Новая': { background: '#b5af33', text: 'Пользователь исправил заявку' },
+      'default': { background: '#f0f0f0', text: 'Не указан' }
+    };
+
+    // Функция для получения цвета и текста на основе статуса
+    const getStatusInfo = (status: string) => {
+      return statusColors[status] || statusColors['default'];
+    };
     return (
       <Accordion
         sx={{ mb: 2, borderRadius: 2, boxShadow: 3 }}
@@ -108,13 +114,24 @@ const RequestBox: React.FC<{
                   sx={{
                     boxShadow: 3,
                     borderRadius: 2,
-                    bgcolor: highlightedId === req.id ? yellow[100] : req.expectationPurchase ? '#dbc20a' : '#f5f5f5',
+                    bgcolor: req?.status?.name === "Завершена"
+                      ? '#a5d6a7' // Зелёный для "Завершено"
+                      : req?.status?.name === "На уточнении"
+                        ? '#ffa726' // Оранжевый для "На уточнении"
+                        :req?.status?.name === "Не согласовано"
+                        ? '#dc4f4f' // Красный для "Не согласовано"
+                         :highlightedId === req.id
+                          ? yellow[100]
+                          : req.expectationPurchase
+                            ? '#dbc20a'
+                            : '#f5f5f5',
                   }}
                   onClick={() => onRequestClick(req.id)}
                 >
                   <CardContent>
                     {req.expectationPayment ?
                       <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
+                        <Typography variant="body1">{req?.status?.name}</Typography>
                         <Typography variant="body1">Заявка № {req.id}</Typography>
                         <Typography variant="body2">
                           Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
@@ -232,11 +249,11 @@ const RequestsPage: React.FC = () => {
 
       const newRequests = data
         // @ts-ignore
-        .filter(req => req.approvedForPurchase === true && req.workSupply === false)
+        .filter(req => req.approvedForPurchase === true && req.workSupply === false && req.closed === false)
         .sort((a, b) => a.id - b.id);
       const inProgress = data
         // @ts-ignore
-        .filter(req => (req.approvedForPayment === true || req.workSupply === true) && req.closed === false)
+        .filter(req => (req.workSupply === true) && req.closed === false)
         .sort((a, b) => a.id - b.id);
 
       const completed = data

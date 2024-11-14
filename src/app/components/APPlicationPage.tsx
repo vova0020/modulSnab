@@ -71,9 +71,15 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
         params: { requestId },
       });
       const data: Request = response.data;
-      console.log(data);
+  
 
-      setRequestData(data);
+      if (Array.isArray(data.items)) {
+        const sortedItems = data.items.sort((a, b) => a.id - b.id);
+        setRequestData({ ...data, items: sortedItems }); // Обновляем состояние с отсортированными items
+      } else {
+        console.log('Поле items не является массивом:', data.items);
+        setRequestData(data); // Сохраняем данные без изменений, если items не массив
+      }
     } catch (error) {
       console.error('Ошибка при загрузке заявок:', error);
     }
@@ -113,6 +119,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
         alert('Данные успешно отправлены на сервер!');
         // fetchRequests()
       }
+      fetchRequests()
     } catch (error) {
       console.error('Ошибка отправки данных:', error);
       alert('Ошибка отправки данных');
@@ -157,28 +164,56 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
   };
 
   // Обработчик выпадающего списка с статусами
-  const handlePurposeChange = async (event: React.ChangeEvent<{ value: unknown }>) => {
-    const selectedPurpose = event.target.value as number;
-    console.log(selectedPurpose);
+  const handlePurposeChange = async (index, e: React.ChangeEvent<{ value: unknown }>, itemsId) => {
+    // const selectedPurpose = e.target.value as number;
+    console.log(itemsId);
     const id: number = requestData?.id || 0;
-    const statusPut: number = selectedPurpose;
+    const statusPut: number =  e.target.value as number;;
+    const itemId = itemsId
     try {
-      
-      await axios.put('/api/getSnabData', { id, statusPut });
+
+      await axios.put('/api/putStatusSnab', { id, statusPut,itemId });
       console.log('Данные успешно обновлены');
       fetchRequests()
     } catch (error) {
       console.error('Ошибка при обновлении данных:', error);
     }
-    
+
     // setPurpose(selectedPurpose);
     // setSubPurpose(null);
-};
+  };
+
+  useEffect(() => {
+    // Проверка, что requestData.items существует и является массивом
+    if (Array.isArray(requestData?.items)) {
+      const allDelivered = requestData.items.every(item => item.status.name === 'Доставлено');
+      const id: number = requestData?.id || 0
+      if (allDelivered) {
+        // Определение асинхронной функции для выполнения запроса
+        const updateStatus = async () => {
+          try {
+            console.log("Запрос пошел");
+            
+            const statusPut: number = 9;  // Новый статус
+            const response = await axios.put('/api/getSnabData', { id, statusPut });
+            console.log('Данные успешно обновлены автоматом:', response.data);  // Ответ от сервера
+            fetchRequests();  // Функция для получения новых данных
+          } catch (error) {
+            console.error('Ошибка при обновлении данных:', error);
+          }
+        };
+  
+        updateStatus();  // Вызов асинхронной функции
+      }
+    }
+  }, [requestData]);
 
 
   const handleInWorkClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
     const buttonText = (event.currentTarget as HTMLButtonElement).innerText;
     setInWork(true);
+    console.log(buttonText);
+    
 
     const id: number = requestData?.id || 0;
 
@@ -211,7 +246,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
       } catch (error) {
         console.error('Ошибка при обновлении данных:', error);
       }
-    } else if (buttonText === buttonComplete) {
+    } else if (buttonText === 'ЗАВЕРШИТЬ') {
       try {
         const statusPut: number = 9;
         await axios.put('/api/getSnabData', { id, statusPut });
@@ -393,11 +428,6 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
                 </Grid>
               ))
             )}
-
-
-
-
-
             <Box
               sx={{
                 display: 'flex',
@@ -418,146 +448,125 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
         </Box>
       </Box>
 
-      {(!inWork && requestData?.workSupply !== true) && (
-        <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
-          <Button variant="contained" color="primary" onClick={handleInWorkClick} sx={{ minWidth: '150px' }}>
-            {workButton}
-          </Button>
-          <Button variant="outlined" color="secondary" disabled={true} onClick={handleInWorkClick} sx={{ minWidth: '150px' }}>
-            {correctionButton}
-          </Button>
-        </Box>
-      )}
+      {requestData?.closed === true ? null : (
+        <>
+          {(!inWork && requestData?.workSupply !== true) && (
+            <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+              <Button variant="contained" color="primary" onClick={handleInWorkClick} sx={{ minWidth: '150px' }}>
+                {workButton}
+              </Button>
+              <Button variant="outlined" color="secondary"  onClick={handleInWorkClick} sx={{ minWidth: '150px' }}>
+                {correctionButton}
+              </Button>
+            </Box>
+          )}
 
-      {(requestData?.workSupply === true && (requestData?.sendSupplyApproval == true || requestData?.approvedForPayment === true)) ?
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '20px',
-            padding: '20px',
-            border: '1px solid #ccc',
-            borderRadius: '8px',
-            backgroundColor: '#fff',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            // maxWidth: '800px',
-            width: '100%',
-            margin: '0 auto',
-          }}
-        >
-          <Typography variant="h6"
-            sx={{
-              fontWeight: 'bold',
-              color: '#333',
-              marginBottom: '20px',
-              textAlign: 'center',
-              borderBottom: '2px solid #1976d2',
-              paddingBottom: '10px',
-            }}>
-            Детали заявки
-          </Typography>
-
-          <Box >
-
-            {requestData?.items && formData.length > 0 && requestData.items.map((item, index) => (
-
-              <Grid container spacing={1} mt={2} sx={{
-                border: '1px solid #d8d8d8',
-                borderRadius: 30,
-                // height: '100vh', // Это важно, чтобы вы могли увидеть вертикальное выравнивание
+          {(requestData?.workSupply === true && (requestData?.sendSupplyApproval === true || requestData?.approvedForPayment === true)) ? (
+            <Box
+              sx={{
                 display: 'flex',
-                alignItems: 'center', // Вертикальное выравнивание (по центру)
-                justifyContent: 'center', // Горизонтальное выравнивание (по центру, если нужно)
-                padding: '8px'
-              }}>
+                flexDirection: 'column',
+                gap: '20px',
+                padding: '20px',
+                border: '1px solid #ccc',
+                borderRadius: '8px',
+                backgroundColor: '#fff',
+                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                width: '100%',
+                margin: '0 auto',
+              }}
+            >
+              <Typography variant="h6"
+                sx={{
+                  fontWeight: 'bold',
+                  color: '#333',
+                  marginBottom: '20px',
+                  textAlign: 'center',
+                  borderBottom: '2px solid #1976d2',
+                  paddingBottom: '10px',
+                }}
+              >
+                Детали заявки
+              </Typography>
 
+              <Box>
+                {requestData?.items && formData.length > 0 && requestData.items.map((item, index) => (
+                  <Grid container spacing={1} mt={2} sx={{
+                    border: '1px solid #d8d8d8',
+                    borderRadius: 30,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '8px'
+                  }} key={index}>
+                    <Grid item xs={4}>
+                      <Box sx={{ display: 'flex' }}>
+                        <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#555' }}>Что заказано:</Typography>
+                        <Typography variant="body1" sx={{ color: '#333', marginLeft: '5px' }}>
+                          {`${item.item || '....Загрузка'}. Количество: ${item.quantity || '....Загрузка'} - ${item.unitMeasurement || '....Загрузка'}`}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={5}>
+                      <TextField select required fullWidth id="status" label="Статус" value={10000} onChange={(e) => handlePurposeChange(index, e,item.id )}>
+                        <MenuItem value={10000} disabled>{item.status.name}</MenuItem>
+                        <MenuItem value={7}>Оплачен</MenuItem>
+                        <MenuItem value={8}>Доставка</MenuItem>
+                        <MenuItem value={13}>Доставлено</MenuItem>
+                      </TextField>
+                    </Grid>
+                  </Grid>
+                ))}
+              </Box>
+            </Box>
+          ) : (
+            requestData?.workSupply === true ? (
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '20px',
+                  padding: '20px',
+                  border: '1px solid #ccc',
+                  borderRadius: '8px',
+                  backgroundColor: '#fff',
+                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                  width: '100%',
+                  margin: '0 auto',
+                }}
+              >
+                <Typography variant="h6"
+                  sx={{
+                    fontWeight: 'bold',
+                    color: '#333',
+                    marginBottom: '20px',
+                    textAlign: 'center',
+                    borderBottom: '2px solid #1976d2',
+                    paddingBottom: '10px',
+                  }}
+                >
+                  Детали заявки
+                </Typography>
 
-                <Grid item xs={4}>
-                  <Box sx={{ display: 'flex' }}>
-                    <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#555' }}>Что заказано:</Typography>
-                    <Typography variant="body1" sx={{ color: '#333', marginLeft: '5px' }}>
-                      {`${item.item || '....Загрузка'}. Количество: ${item.quantity || '....Загрузка'} - ${item.unitMeasurement || '....Загрузка'}`}
-                    </Typography>
-                    {/* <Typography variant="body1" sx={{ color: '#333', marginLeft: '5px' }}>
-                      {item.status.name}
-                    </Typography> */}
-                  </Box>
-                </Grid>
-                <Grid item xs={5}>
-
-                  <TextField select
-                                required
-                                fullWidth
-                                id="status"
-                                label="Статус"
-                                value={10000}
-                                onChange={handlePurposeChange}
-                            >
-                                <MenuItem value={10000} disabled>{item.status.name}</MenuItem>
-                                <MenuItem value={7}>Оплачен</MenuItem>
-                                <MenuItem value={8}>Доставка</MenuItem>
-                                <MenuItem value={13}>Доставлено</MenuItem>
-                                {/* <MenuItem value={9}>Завершена</MenuItem> */}
-                            </TextField>
-                </Grid>
-
-              </Grid>
-            ))}
-          </Box>
-          
-          
-        </Box>
-        : (requestData?.workSupply === true ? <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '20px',
-            padding: '20px',
-            border: '1px solid #ccc',
-            borderRadius: '8px',
-            backgroundColor: '#fff',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            // maxWidth: '800px',
-            width: '100%',
-            margin: '0 auto',
-          }}
-        >
-          <Typography variant="h6"
-            sx={{
-              fontWeight: 'bold',
-              color: '#333',
-              marginBottom: '20px',
-              textAlign: 'center',
-              borderBottom: '2px solid #1976d2',
-              paddingBottom: '10px',
-            }}>
-            Детали заявки
-          </Typography>
-
-          <Box >
-
-            {requestData?.items && formData.length > 0 && requestData.items.map((item, index) => (
-
-              <Grid container spacing={1} mt={2} sx={{
-                border: '1px solid #d8d8d8',
-                borderRadius: 30,
-                // height: '100vh', // Это важно, чтобы вы могли увидеть вертикальное выравнивание
-                display: 'flex',
-                alignItems: 'center', // Вертикальное выравнивание (по центру)
-                justifyContent: 'center', // Горизонтальное выравнивание (по центру, если нужно)
-                padding: '8px'
-              }}>
-
-
-                <Grid item xs={4}>
-                  <Box sx={{ display: 'flex' }}>
-                    <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#555' }}>Что заказано:</Typography>
-                    <Typography variant="body1" sx={{ color: '#333', marginLeft: '5px' }}>
-                      {`${item.item || '....Загрузка'}. Количество: ${item.quantity || '....Загрузка'} - ${item.unitMeasurement || '....Загрузка'}`}
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={1}>
+                <Box>
+                  {requestData?.items && formData.length > 0 && requestData.items.map((item, index) => (
+                    <Grid container spacing={1} mt={2} sx={{
+                      border: '1px solid #d8d8d8',
+                      borderRadius: 30,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '8px'
+                    }} key={index}>
+                      <Grid item xs={4}>
+                        <Box sx={{ display: 'flex' }}>
+                          <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#555' }}>Что заказано:</Typography>
+                          <Typography variant="body1" sx={{ color: '#333', marginLeft: '5px' }}>
+                            {`${item.item || '....Загрузка'}. Количество: ${item.quantity || '....Загрузка'} - ${item.unitMeasurement || '....Загрузка'}`}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={1}>
                   <TextField label="Цена" name="amount" fullWidth value={formData[index].amount} onChange={(e) => handleChange(index, e)} sx={{
                     '& .MuiOutlinedInput-root': { borderRadius: '25px' },
                   }} />
@@ -582,36 +591,35 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
                     '& .MuiOutlinedInput-root': { borderRadius: '25px' },
                   }} />
                 </Grid>
-              </Grid>
-            ))}
-          </Box>
-          <TextField label="Комментарий" name="comment" multiline rows={4} fullWidth value={formData.comment} onChange={handleChange} />
+                    </Grid>
+                  ))}
+                </Box>
+                <TextField label="Комментарий" name="comment" multiline rows={4} fullWidth value={formData.comment} onChange={handleChange} />
+                <Button variant="contained" color="primary" sx={{ alignSelf: 'flex-end', minWidth: '200px' }} disabled={!isFormValid()} onClick={handleSubmit}>
+                  Сохранить и отправить на согласование
+                </Button>
+              </Box>
+            ) : null
+          )}
 
-          <Button variant="contained" color="primary" sx={{ alignSelf: 'flex-end', minWidth: '200px' }} disabled={!isFormValid()} onClick={handleSubmit}>
-            Сохранить и отправить на согласование
-          </Button>
-        </Box>:'')
-      }
+          {requestData?.approvedForPayment === true && (
+            <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+              <Button variant="contained" onClick={handleInWorkClick} sx={{
+                minWidth: '150px',
+                backgroundColor: '#2cf501',
+                color: 'black',
+                '&:hover': {
+                  backgroundColor: '#24d401'
+                }
+              }}>
+                Завершить
+              </Button>
+            </Box>
+          )}
+        </>
+      )}
 
-      {/* {(requestData?.status.name === statusMoney)?(
-        <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
-        <Button variant="contained" color="primary" onClick={handleInWorkClick} sx={{ minWidth: '150px' }}>
-          Оплачен
-        </Button>
-      </Box>
-      ):((requestData?.status.name === statusMoneyOk)?(
-        <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
-        <Button variant="contained" color="primary" onClick={handleInWorkClick} sx={{ minWidth: '150px' }}>
-          Доставка
-        </Button>
-      </Box>
-      ):((requestData?.status.name === statusDostavka)&&(
-        <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
-        <Button variant="contained" color="primary" onClick={handleInWorkClick} sx={{ minWidth: '150px' }}>
-        Завершить
-        </Button>
-      </Box>
-      )))} */}
+
 
       <Modal
         open={open}
