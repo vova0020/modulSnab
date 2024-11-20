@@ -378,6 +378,21 @@ export default function Applications() {
                                 </TextField>
                             </Grid>
                         )}
+                        {purpose === 'Оборудование' && (
+                            <Grid item xs={6}>
+                                <TextField select
+                                    required
+                                    fullWidth
+                                    id="subPurpose"
+                                    label="Подкатегория"
+                                    onChange={(e) => setSubPurpose(e.target.value as string)}
+                                >
+                                    <MenuItem value="Уникальное оборудование">Уникальное оборудование</MenuItem>
+                                    <MenuItem value="Обычное оборудование">Обычное оборудование</MenuItem>
+                               
+                                </TextField>
+                            </Grid>
+                        )}
                     </Grid>
                 </Box>
                 {/* Четвертый блок */}

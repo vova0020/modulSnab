@@ -412,6 +412,91 @@ export default class prismaInteraction {
       await prisma.$disconnect();
     }
   }
+ 
+ // удаление из таблицы согласования
+  async delAplicationTable(itemId: number, requestId: number) {
+   
+    try {
+      
+      // Обновление количество заявки
+      const requestUpdate = await prisma.requestItem.delete({
+        where: { id: itemId },
+        
+      });
+        
+      return {
+        requestUpdate,
+      };
+    } catch (error) {
+      console.error('Ошибка при получении списка заявок:', error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+ // Блокирование строки в заявке
+  async blokAplicationTable(item: any, status: string) {
+    console.log(status);
+    let stat
+    if (status == 'да') {
+      stat = false
+    } else if (status == 'нет') {
+      stat = true
+    }
+    
+    try {
+      
+      
+      // Обновление количество заявки
+      const requestUpdate1 = await prisma.request.update({
+        where: { id: Number(item.requestId) },
+        data: {
+          blocked: stat
+        },
+      });
+      const requestUpdate = await prisma.requestItem.update({
+        where: { id: Number(item.id) },
+        data: {
+          blocked: stat
+        },
+      });
+        
+      return {
+        requestUpdate,
+      };
+    } catch (error) {
+      console.error('Ошибка при получении списка заявок:', error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+ // Внесение изменений в запись в из таблицы согласования
+  async putAplicationTable(item: any, newQuantity: number) {
+    console.log(newQuantity);
+    
+    try {
+      
+      // Обновление количество заявки
+      const requestUpdate = await prisma.requestItem.update({
+        where: { id: Number(item.id) },
+        data: {
+          quantity: newQuantity
+        },
+      });
+        
+      return {
+        requestUpdate,
+      };
+    } catch (error) {
+      console.error('Ошибка при получении списка заявок:', error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+
+
   // Внесение изменений в запись в личном кабинете
   async putAnswerAplicationCard(applicationNumber: number, answer: any, question: any, userId: number) {
     try {
@@ -535,10 +620,37 @@ export default class prismaInteraction {
     }
 
   }
+  // Получение списка сообщений
+  async getMessage(requestId: number) {
+    try {
+
+      const requestData = await prisma.clarification.findMany({
+        where: { requestId: requestId },
+        include: {
+          responses: {
+            include: {
+              user:true
+            },
+          },
+          user: true
+
+        },
+      })
+      
+
+      return requestData;
+    } catch (error) {
+      console.error("Ошибка при получении заявок пользователя:", error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+
+  }
 
 
   // Внесение изменений от снабжения
-  async putRequestSnabData(id: number, statusPut: number, question: string) {
+  async putRequestSnabData(id: number, statusPut: number, question: string, userId: number) {
     let requestItems; // Инициализация переменной вне блоков
     let clarification; // Инициализация переменной для clarification
 
@@ -626,8 +738,13 @@ export default class prismaInteraction {
         // Создание записи о уточнении
         clarification = await prisma.clarification.create({
           data: {
-            requestId: id,
-            question: question
+            request: {
+              connect: { id: id }, // Укажите существующий ID заявки
+            },
+            question: question,
+            user: {
+              connect: { id: userId }
+            },
           }
         });
 
@@ -726,6 +843,7 @@ export default class prismaInteraction {
               supplierName1C: item.itemName1C,
               supplierName: item.itemNameProvider,
               amount: item.amount,
+              oplata: item.oplata,
               deliveryDeadline: new Date(item.deliveryDate).toISOString(),
               status: {
                 connect: { id: 5 }, // Связываем статус (согласование к оплате) с заявкой
@@ -744,6 +862,73 @@ export default class prismaInteraction {
       await prisma.$disconnect();
     }
   }
+
+// Повторное согласование
+  async putRequestSnab2(requestId: number, updatedData: number) {
+    try {
+      // console.log(updatedData);
+
+      const requestUpdate = await prisma.request.update({
+        where: { id: Number(requestId) },
+        data: {
+          sendSupplyApproval: true,
+          approvedForPayment: false,
+          invoiceNumber: updatedData.invoiceNumber,
+          additionalComment: updatedData.comment,
+          // status: {
+          //   connect: { id: 5 } // Связываем статус (согласование к оплате) с заявкой
+          // },
+        },
+      });
+      const updatedItems = await Promise.all(
+        updatedData.map(async (item) => {
+          if (item.blocked === false) {
+            return prisma.requestItem.update({
+              where: { id: Number(item.itemsId) },
+              data: {
+                provider: item.provider,
+                supplierName1C: item.itemName1C,
+                supplierName: item.itemNameProvider,
+                amount: item.amount,
+                // oplata: item.oplata,
+                deliveryDeadline: new Date(item.deliveryDate).toISOString(),
+                status: {
+                  connect: { id: 6 }, // Связываем статус (согласование к оплате) с заявкой
+                },
+              },
+            });
+          } else if (item.blocked === true) {
+            console.log(item);
+            return prisma.requestItem.update({
+              where: { id: Number(item.itemsId) },
+              data: {
+                provider: item.provider,
+                supplierName1C: item.itemName1C,
+                supplierName: item.itemNameProvider,
+                amount: item.amount,
+                oplata: item.oplata,
+                deliveryDeadline: new Date(item.deliveryDate).toISOString(),
+                status: {
+                  connect: { id: 14 }, // Связываем статус (согласование к оплате) с заявкой
+                },
+              },
+            });
+          }
+        })
+      );
+
+      
+
+
+      return requestUpdate;
+    } catch (error) {
+      console.error('Ошибка при получении списка заявок:', error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+
 
 
 
@@ -828,28 +1013,48 @@ export default class prismaInteraction {
         }
       } else if (etap == 'Покупка') {
         if (status == 'Да') {
+          let statBlock = false
+          items.map(async (item) => {
+            if (item.blocked === true) {
+              statBlock = true
+            }
+          })
           const requestUpdate = await prisma.request.update({
             where: { id: Number(id) },
             data: {
               approvedForPayment: true,
               expectationPayment: false,
+              blocked: statBlock
               // status: {
               //   connect: { id: 6 } // Связываем новый статус с заявкой
               // },
             },
           });
-          const updatedItems = items.map((item) =>
-            prisma.requestItem.update({
-              where: { id: Number(item.id) },
-              data: {
-                status: {
-                  connect: { id: 6 } // Связываем новый статус с заявкой
-                },
-              },
+          const updatedItems = await Promise.all(
+            items.map(async (item) => {
+              if (item.blocked === false) {
+                return prisma.requestItem.update({
+                  where: { id: Number(item.id) },
+                  data: {
+                    status: {
+                      connect: { id: 6 }, // Связываем новый статус с заявкой
+                    },
+                  },
+                });
+              } else if (item.blocked === true) {
+                return prisma.requestItem.update({
+                  where: { id: Number(item.id) },
+                  data: {
+                    status: {
+                      connect: { id: 11 }, // Связываем новый статус с заявкой
+                    },
+                  },
+                });
+              }
             })
           );
 
-          await Promise.all(updatedItems);
+          // await Promise.all(updatedItems);
           return requestUpdate
         } else if (status == 'Нет') {
           const requestUpdate = await prisma.request.update({

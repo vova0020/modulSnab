@@ -14,6 +14,8 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import MenuItem from '@mui/material/MenuItem';
+import { jwtDecode } from 'jwt-decode';
+import Messager from './Messager';
 
 
 interface ApplicationPageProps {
@@ -47,6 +49,30 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
   const [question, setQuestion] = useState('');
 
   const [formData, setFormData] = useState([]);
+  const [formData2, setFormData2] = useState([]);
+
+
+  const [data, setData] = useState([]); // Хранит заявки
+  const [token, setToken] = useState<string | null>(null); // Токен пользователя
+  const [userId, setUserId] = useState<number | null>(null); // Идентификатор пользователя
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      setToken(storedToken);
+      try {
+        const decoded: any = jwtDecode(storedToken);
+        setUserId(decoded.id);
+      } catch (error) {
+        console.error("Ошибка при декодировании токена:", error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    console.log(userId);
+
+  }, [userId]);
 
   useEffect(() => {
     if (requestData?.items) {
@@ -59,11 +85,43 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
           invoiceNumber: '',
           amount: '',
           deliveryDate: '',
+          oplata: '',
           comment: '',
         }))
       );
     }
   }, [requestData?.items]);
+  useEffect(() => {
+    if (requestData?.items) {
+      setFormData2(
+        requestData.items.map((item) => ({
+          itemsId: item.id,
+          provider: item.provider,
+          itemName1C: item.itemName1C,
+          itemNameProvider: item.itemNameProvider,
+          invoiceNumber: item.invoiceNumber,
+          amount: item.amount,
+          deliveryDate: item.deliveryDeadline,
+          oplata: item.oplata,
+          comment: item.comment,
+          blocked: item.blocked
+        }))
+      );
+    }
+    // console.log(formData2);
+
+  }, [requestData?.items]);
+  useEffect(() => {
+    if (requestData?.items && Array.isArray(requestData.items)) {
+      for (const element of requestData.items) {
+        // Ваш код обработки элемента
+        // console.log(element);
+      }
+    } else {
+      console.warn('requestData.items отсутствует или не является массивом');
+    }
+  }, [requestData]);
+
 
   const fetchRequests = async () => {
     try {
@@ -71,7 +129,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
         params: { requestId },
       });
       const data: Request = response.data;
-  
+
 
       if (Array.isArray(data.items)) {
         const sortedItems = data.items.sort((a, b) => a.id - b.id);
@@ -92,6 +150,21 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
   const handleChange = (index, e) => {
     const { name, value } = e.target;
     setFormData((prevData) =>
+      prevData.map((data, i) =>
+        i === index
+          ? {
+            ...data,
+            [name]: name === 'deliveryDate'
+              ? new Date(value).toISOString().slice(0, 10) // Приводим к "yyyy-MM-dd"
+              : value
+          }
+          : data
+      )
+    );
+  };
+  const handleChange2 = (index, e) => {
+    const { name, value } = e.target;
+    setFormData2((prevData) =>
       prevData.map((data, i) =>
         i === index
           ? {
@@ -125,6 +198,26 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
       alert('Ошибка отправки данных');
     }
   };
+  const handleSubmit2 = async () => {
+    const updatedData = formData2.map((item) => ({
+      ...item,
+      amount: parseFloat(item.amount),
+
+    }));
+    try {
+      // console.log(updatedData);
+
+      const response = await axios.put('/api/putSnab2', { requestId, updatedData });
+      if (response.status === 200) {
+        alert('Данные успешно отправлены на сервер!');
+        // fetchRequests()
+      }
+      fetchRequests()
+    } catch (error) {
+      console.error('Ошибка отправки данных:', error);
+      alert('Ошибка отправки данных');
+    }
+  };
 
   const workButton = 'В РАБОТУ';
   const correctionButton = 'ОТПРАВИТЬ НА УТОЧНЕНИЕ';
@@ -140,7 +233,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
   const statusComplete = 'Завершена';
 
   useEffect(() => {
-    console.log(requestData?.items[0].id || '...гружу');
+    // console.log(requestData?.items[0].id || '...гружу');
   }, [requestData])
 
   const images: string[] = [];
@@ -166,13 +259,13 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
   // Обработчик выпадающего списка с статусами
   const handlePurposeChange = async (index, e: React.ChangeEvent<{ value: unknown }>, itemsId) => {
     // const selectedPurpose = e.target.value as number;
-    console.log(itemsId);
+    // console.log(itemsId);
     const id: number = requestData?.id || 0;
-    const statusPut: number =  e.target.value as number;;
+    const statusPut: number = e.target.value as number;;
     const itemId = itemsId
     try {
 
-      await axios.put('/api/putStatusSnab', { id, statusPut,itemId });
+      await axios.put('/api/putStatusSnab', { id, statusPut, itemId });
       console.log('Данные успешно обновлены');
       fetchRequests()
     } catch (error) {
@@ -193,7 +286,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
         const updateStatus = async () => {
           try {
             console.log("Запрос пошел");
-            
+
             const statusPut: number = 9;  // Новый статус
             const response = await axios.put('/api/getSnabData', { id, statusPut });
             console.log('Данные успешно обновлены автоматом:', response.data);  // Ответ от сервера
@@ -202,7 +295,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
             console.error('Ошибка при обновлении данных:', error);
           }
         };
-  
+
         updateStatus();  // Вызов асинхронной функции
       }
     }
@@ -212,8 +305,8 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
   const handleInWorkClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
     const buttonText = (event.currentTarget as HTMLButtonElement).innerText;
     setInWork(true);
-    console.log(buttonText);
-    
+    // console.log(buttonText);
+
 
     const id: number = requestData?.id || 0;
 
@@ -309,7 +402,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
           padding: '20px',
           borderRadius: '8px',
           boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-          width: '50%',
+          width: '80%',
           justifyContent: 'center', // Центрирование по вертикали
           alignItems: 'center', // Центрирование по горизонтали
           margin: '0 auto',
@@ -446,6 +539,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
             </Box>
           </Box>
         </Box>
+        <Messager requestId={requestData?.id} />
       </Box>
 
       {requestData?.closed === true ? null : (
@@ -455,7 +549,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
               <Button variant="contained" color="primary" onClick={handleInWorkClick} sx={{ minWidth: '150px' }}>
                 {workButton}
               </Button>
-              <Button variant="outlined" color="secondary"  onClick={handleInWorkClick} sx={{ minWidth: '150px' }}>
+              <Button variant="outlined" color="secondary" onClick={handleInWorkClick} sx={{ minWidth: '150px' }}>
                 {correctionButton}
               </Button>
             </Box>
@@ -491,31 +585,96 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
 
               <Box>
                 {requestData?.items && formData.length > 0 && requestData.items.map((item, index) => (
-                  <Grid container spacing={1} mt={2} sx={{
-                    border: '1px solid #d8d8d8',
-                    borderRadius: 30,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '8px'
-                  }} key={index}>
-                    <Grid item xs={4}>
-                      <Box sx={{ display: 'flex' }}>
-                        <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#555' }}>Что заказано:</Typography>
-                        <Typography variant="body1" sx={{ color: '#333', marginLeft: '5px' }}>
+                  item.blocked == true && item.status.id != 14 ?
+                    <Grid container spacing={1} mt={2} sx={{
+                      border: '1px solid #d8d8d8',
+
+                      borderRadius: 30,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '8px'
+                    }} key={index}>
+                      <Grid item xs={3}>
+
+                        <Box sx={{ display: 'flex', gap: 2, }}>
+                          <TextField variant="standard" label="Заказ" size="small"
+                            value={`${item.item || '....Загрузка'}`} />
+                          <TextField variant="standard" label="Количество" size="small"
+                            value={`${item.quantity || '....Загрузка'} - ${item.unitMeasurement || '....Загрузка'}`} />
+                        </Box>
+                      </Grid>
+                      <Grid item xs={2}>
+                        <TextField label={`Сумма ${item.amount}`} name="amount" fullWidth value={formData2[index].amount} onChange={(e) => handleChange2(index, e)} sx={{
+                          '& .MuiOutlinedInput-root': { borderRadius: '25px' },
+                        }} />
+                      </Grid>
+                      <Grid item xs={2}>
+                        <TextField label={`Номер счета / КП ${item.invoiceNumber || ''}`} name="invoiceNumber" fullWidth value={formData2[index].invoiceNumber} onChange={(e) => handleChange2(index, e)} sx={{
+                          '& .MuiOutlinedInput-root': { borderRadius: '25px' },
+                        }} />
+                      </Grid>
+                      <Grid item xs={2}>
+                        <TextField label={`Поставщик ${item.invoiceNumber || ''}`} name="provider" fullWidth value={formData2[index].provider} onChange={(e) => handleChange2(index, e)} sx={{
+                          '& .MuiOutlinedInput-root': { borderRadius: '25px' },
+                        }} />
+                      </Grid>
+                      <Grid item xs={1}>
+                        <TextField select fullWidth name="oplata" label={`Вариант оплаты ${item.oplata || ''}`} value={formData2[index].oplata} onChange={(e) => handleChange2(index, e)}>
+                          {/* <MenuItem value={10000} disabled>{item.status.name}</MenuItem> */}
+                          <MenuItem value={'Оплата'}>Оплата</MenuItem>
+                          <MenuItem value={'Постоплата'}>Постоплата</MenuItem>
+                          <MenuItem value={'Предоплата'}>Предоплата</MenuItem>
+
+                        </TextField>
+                      </Grid>
+
+                      <Grid item xs={2}>
+                        <TextField label="Срок поставки" name="deliveryDate" type="date" InputLabelProps={{ shrink: true }} fullWidth value={formData2[index].deliveryDate} onChange={(e) => handleChange2(index, e)} sx={{
+                          '& .MuiOutlinedInput-root': { borderRadius: '25px' },
+                        }} />
+                      </Grid>
+                    </Grid>
+
+                    :
+                    <Grid container spacing={1} mt={2} sx={{
+                      border: '1px solid #d8d8d8',
+                      borderRadius: 30,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '8px'
+                    }} key={index}>
+                      <Grid item xs={8}>
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                          {/* <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#555' }}>Что заказано:</Typography> */}
+                          {/* <Typography variant="body1" sx={{ color: '#333', marginLeft: '5px' }}>
                           {`${item.item || '....Загрузка'}. Количество: ${item.quantity || '....Загрузка'} - ${item.unitMeasurement || '....Загрузка'}`}
-                        </Typography>
-                      </Box>
+                        </Typography> */}
+                          <TextField variant="standard" label="Заказ" size="small" fullWidth
+                            value={`${item.item || '....Загрузка'}`} />
+                          <TextField variant="standard" label="Количество" size="small"
+                            value={`${item.quantity || '....Загрузка'} - ${item.unitMeasurement || '....Загрузка'}`} />
+                        </Box>
+                      </Grid>
+                      <Grid item xs={3}>
+                        <TextField select required fullWidth id="status" label="Статус" value={10000} onChange={(e) => handlePurposeChange(index, e, item.id)}>
+                          <MenuItem value={10000} disabled>{item.status.name}</MenuItem>
+                          <MenuItem value={19}>Поиск поставщика</MenuItem>
+                          <MenuItem value={16}>Ожидает</MenuItem>
+                          <MenuItem value={15}>Заказано</MenuItem>
+                          <MenuItem value={7}>Оплачен</MenuItem>
+
+                          {/* <MenuItem value={7}>Оплачен</MenuItem> */}
+                          <MenuItem value={8}>Доставка</MenuItem>
+
+                          <MenuItem value={17}>Доставлено, оплачено</MenuItem>
+                          <MenuItem value={18}>Доставлено, не оплачено</MenuItem>
+
+                          <MenuItem value={13}>Доставлено</MenuItem>
+                        </TextField>
+                      </Grid>
                     </Grid>
-                    <Grid item xs={5}>
-                      <TextField select required fullWidth id="status" label="Статус" value={10000} onChange={(e) => handlePurposeChange(index, e,item.id )}>
-                        <MenuItem value={10000} disabled>{item.status.name}</MenuItem>
-                        <MenuItem value={7}>Оплачен</MenuItem>
-                        <MenuItem value={8}>Доставка</MenuItem>
-                        <MenuItem value={13}>Доставлено</MenuItem>
-                      </TextField>
-                    </Grid>
-                  </Grid>
                 ))}
               </Box>
             </Box>
@@ -559,38 +718,54 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
                       padding: '8px'
                     }} key={index}>
                       <Grid item xs={4}>
-                        <Box sx={{ display: 'flex' }}>
-                          <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#555' }}>Что заказано:</Typography>
-                          <Typography variant="body1" sx={{ color: '#333', marginLeft: '5px' }}>
-                            {`${item.item || '....Загрузка'}. Количество: ${item.quantity || '....Загрузка'} - ${item.unitMeasurement || '....Загрузка'}`}
-                          </Typography>
+                        {/* <Box sx={{ display: 'flex' }}> */}
+                        {/* <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#555' }}>Что заказано:</Typography> */}
+                        {/* <Typography variant="body1" sx={{ color: '#333', marginLeft: '5px' }}> */}
+                        {/* {`${item.item || '....Загрузка'}. Количество: ${item.quantity || '....Загрузка'} - ${item.unitMeasurement || '....Загрузка'}`} */}
+                        {/* </Typography> */}
+                        {/* </Box> */}
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                          <TextField variant="standard" label="Заказ" size="small" fullWidth
+                            value={`${item.item || '....Загрузка'}`} />
+                          <TextField variant="standard" label="Количество" size="small"
+                            value={`${item.quantity || '....Загрузка'} - ${item.unitMeasurement || '....Загрузка'}`} />
                         </Box>
                       </Grid>
                       <Grid item xs={1}>
-                  <TextField label="Цена" name="amount" fullWidth value={formData[index].amount} onChange={(e) => handleChange(index, e)} sx={{
-                    '& .MuiOutlinedInput-root': { borderRadius: '25px' },
-                  }} />
-                </Grid>
-                <Grid item xs={1}>
-                  <TextField label="Номер счета / КП" name="invoiceNumber" fullWidth value={formData[index].invoiceNumber} onChange={(e) => handleChange(index, e)} sx={{
-                    '& .MuiOutlinedInput-root': { borderRadius: '25px' },
-                  }} />
-                </Grid>
-                <Grid item xs={2}>
-                  <TextField label="Поставщик" name="provider" fullWidth value={formData[index].provider} onChange={(e) => handleChange(index, e)} sx={{
-                    '& .MuiOutlinedInput-root': { borderRadius: '25px' },
-                  }} />
-                </Grid>
-                <Grid item xs={2}>
-                  <TextField label="Наименование из 1С" name="itemName1C" fullWidth value={formData[index].itemName1C} onChange={(e) => handleChange(index, e)} sx={{
-                    '& .MuiOutlinedInput-root': { borderRadius: '25px' },
-                  }} />
-                </Grid>
-                <Grid item xs={2}>
-                  <TextField label="Срок поставки" name="deliveryDate" type="date" InputLabelProps={{ shrink: true }} fullWidth value={formData[index].deliveryDate} onChange={(e) => handleChange(index, e)} sx={{
-                    '& .MuiOutlinedInput-root': { borderRadius: '25px' },
-                  }} />
-                </Grid>
+                        <TextField label="Цена" name="amount" fullWidth value={formData[index].amount} onChange={(e) => handleChange(index, e)} sx={{
+                          '& .MuiOutlinedInput-root': { borderRadius: '25px' },
+                        }} />
+                      </Grid>
+                      <Grid item xs={1}>
+                        <TextField label="Номер счета / КП" name="invoiceNumber" fullWidth value={formData[index].invoiceNumber} onChange={(e) => handleChange(index, e)} sx={{
+                          '& .MuiOutlinedInput-root': { borderRadius: '25px' },
+                        }} />
+                      </Grid>
+                      <Grid item xs={1}>
+                        <TextField label="Поставщик" name="provider" fullWidth value={formData[index].provider} onChange={(e) => handleChange(index, e)} sx={{
+                          '& .MuiOutlinedInput-root': { borderRadius: '25px' },
+                        }} />
+                      </Grid>
+                      <Grid item xs={2}>
+                        <TextField label="Наименование из 1С" name="itemName1C" fullWidth value={formData[index].itemName1C} onChange={(e) => handleChange(index, e)} sx={{
+                          '& .MuiOutlinedInput-root': { borderRadius: '25px' },
+                        }} />
+                      </Grid>
+                      <Grid item xs={1}>
+                        <TextField select fullWidth name="oplata" label="Вариант оплаты" value={formData[index].oplata} onChange={(e) => handleChange(index, e)}>
+                          {/* <MenuItem value={10000} disabled>{item.status.name}</MenuItem> */}
+                          <MenuItem value={'Оплата'}>Оплата</MenuItem>
+                          <MenuItem value={'Постоплата'}>Постоплата</MenuItem>
+                          <MenuItem value={'Предоплата'}>Предоплата</MenuItem>
+
+                        </TextField>
+                      </Grid>
+                      <Grid item xs={2}>
+                        <TextField label="Срок поставки" name="deliveryDate" type="date" InputLabelProps={{ shrink: true }} fullWidth value={formData[index].deliveryDate} onChange={(e) => handleChange(index, e)} sx={{
+                          '& .MuiOutlinedInput-root': { borderRadius: '25px' },
+                        }} />
+                      </Grid>
+
                     </Grid>
                   ))}
                 </Box>
@@ -603,18 +778,23 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
           )}
 
           {requestData?.approvedForPayment === true && (
-            <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
-              <Button variant="contained" onClick={handleInWorkClick} sx={{
-                minWidth: '150px',
-                backgroundColor: '#2cf501',
-                color: 'black',
-                '&:hover': {
-                  backgroundColor: '#24d401'
-                }
-              }}>
-                Завершить
+            requestData?.blocked == true ? <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+              <Button variant="contained" color="primary" sx={{ alignSelf: 'flex-end', minWidth: '200px' }} onClick={handleSubmit2}>
+                Сохранить и отправить на повторное согласование
               </Button>
-            </Box>
+            </Box> :
+              <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+                <Button variant="contained" onClick={handleInWorkClick} sx={{
+                  minWidth: '150px',
+                  backgroundColor: '#2cf501',
+                  color: 'black',
+                  '&:hover': {
+                    backgroundColor: '#24d401'
+                  }
+                }}>
+                  Завершить
+                </Button>
+              </Box>
           )}
         </>
       )}
@@ -659,7 +839,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
               handleClose();
               const id: number = requestData?.id || 0;
               const statusPut: number = 10;
-              axios.put('/api/getSnabData', { id, statusPut, question })
+              axios.put('/api/getSnabData', { id, statusPut, question, userId })
                 .then(() => {
                   console.log('Данные успешно обновлены');
                   fetchRequests();

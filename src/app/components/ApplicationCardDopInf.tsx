@@ -128,14 +128,14 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, app, it
     const statusColors = {
         'Согласование к закупке': { background: '#f0f0f0', text: 'Ожидает согласования' },
         'Согласован к закупке': { background: '#0008ff', text: 'Согласовано' },
-        'Согласование к оплате': { background: '#ccd71a', text: 'В работе у снабжения' },
-        'Согласован к оплате': { background: '#ccd71a', text: 'В работе у снабжения' },
+        'Согласование к оплате': { background: '#ccd71a', text: 'Ожидает согласование к оплате' },
+        'Согласован к оплате': { background: '#ccd71a', text: 'Согласован к оплате' },
         'В работе': { background: '#ccd71a', text: 'В работе у снабжения' },
         'Оплачен': { background: '#ccd71a', text: 'Оплачен' },
         'Доставка': { background: '#ccd71a', text: 'Доставляется' },
         'Доставлено': { background: '#00ff10', text: 'Доставлено' },
-        'Завершена': { background: '#00ff10', text: 'Завершена' },
         'Не согласовано': { background: '#db130b', text: 'Не согласовано' },
+        'Повторное согласование': { background: '#db130b', text: 'На повторном согласование' },
         'Отложено': { background: '#ff5600', text: 'Отложено' },
         'На уточнении': { background: '#ff5600', text: 'Нужно уточнить' },
         'Новая': { background: '#f0f0f0', text: 'Отправлена в снабжение' },
@@ -161,7 +161,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, app, it
         >
             <CardContent>
                 <Box display="flex" flexDirection="column" mb={2}>
-                    {(app.approvedForPurchase === false && app.cancellationPurchase != true) &&
+                    {app.approvedForPurchase === false &&
                         <Box display="flex" justifyContent='flex-end' >
                             <IconButton
 
@@ -228,7 +228,23 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, app, it
                                         display: 'inline', // Чтобы текст "Статус" был в одной строке
                                     }}
                                 >
+                                 Сумма: {item.amount || '...нет данных'}
+
+                                </Typography>
+                                <Typography
+                                    variant="subtitle2"
+                                    sx={{
+                                        // backgroundColor: status.background, // Цвет фона
+                                        color: 'black', // Цвет текста
+                                        border: '1px solid #888', // Рамка вокруг текста
+                                        borderRadius: 50, // Скругленные углы
+                                        padding: '3px 8px', // Отступы внутри текста
+                                        marginLeft: '8px', // Отступ слева для разделения
+                                        display: 'inline', // Чтобы текст "Статус" был в одной строке
+                                    }}
+                                >
                                  Дата доставки: {item.deliveryDeadline ? new Date(item.deliveryDeadline).toLocaleDateString('ru-RU') : '...нет данных'}
+
 
                                 </Typography>
                                 <Typography

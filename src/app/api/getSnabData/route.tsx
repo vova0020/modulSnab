@@ -25,12 +25,12 @@ export async function GET(req: NextRequest) {
 // PUT-запрос для обновления данных
 export async function PUT(req: NextRequest) {
     try {
-        const { id, statusPut, question } = await req.json(); // Извлекаем id, field и value из тела запроса
-        console.log(question);
+        const { id, statusPut, question, userId } = await req.json(); // Извлекаем id, field и value из тела запроса
+        console.log(userId);
         // console.log(statusPut);
         
         // Обновляем запись в базе данных с помощью Prisma
-        const updatedStatus = await prisma.putRequestSnabData(id, statusPut, question);
+        const updatedStatus = await prisma.putRequestSnabData(id, statusPut, question, userId);
 
         return NextResponse.json(updatedStatus, { status: 200 });
     } catch (error) {

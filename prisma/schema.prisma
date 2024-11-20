@@ -20,6 +20,7 @@ model User {
   requests               Request[] // Один пользователь может иметь несколько заявок
   changeHistories        ChangeHistory[] // История изменений пользователя
   clarificationResponses ClarificationResponse[] // Ответы пользователя на уточнения
+  clarification          Clarification[] // Ответы пользователя на уточнения
 }
 
 model Otdel {
@@ -54,6 +55,7 @@ model Request {
   expectationPayment   Boolean?        @default(false) //  Ожидание оплаты
   workSupply           Boolean?        @default(false) // В работе Снабжение
   closed               Boolean?        @default(false) // Заявка закрыта
+  blocked              Boolean?        @default(false) // Строка не согласована в задании
   // promptness          String? // Срочность  
   // invoiceNumber       String? // Номер счета
   additionalComment    String? // Дополнительный комментарий
@@ -80,7 +82,9 @@ model RequestItem {
   supplierName1C   String? // Наименование из 1С
   supplierName     String? // Наименование у поставщика
   amount           Float? // Сумма
+  oplata           String? // вариант оплаты
   deliveryDeadline DateTime? // Срок поставки
+  blocked          Boolean?        @default(false) // Строка не согласована
   requestId        Int
   request          Request         @relation(fields: [requestId], references: [id], onDelete: Cascade) // Каскадное удаление
   statusId         Int?
@@ -104,6 +108,8 @@ model Clarification {
   question  String? // Текст уточнения
   responses ClarificationResponse[] // Массив ответов на это уточнение
   createdAt DateTime                @default(now()) // Дата создания уточнения
+  userId    Int // Ссылка на пользователя, который ответил
+  user      User                    @relation(fields: [userId], references: [id])
 }
 
 model ClarificationResponse {

@@ -66,7 +66,10 @@ const RequestForm: React.FC = () => {
 
     // Обработчики
     const handlePurposeChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+        
+        
         const selectedPurpose = event.target.value as string;
+        console.log(selectedPurpose);
         setPurpose(selectedPurpose);
         setSubPurpose(null);
     };
@@ -358,6 +361,21 @@ const RequestForm: React.FC = () => {
                                     <MenuItem value="Для рабочего места">Для рабочего места</MenuItem>
                                     {/* <MenuItem value="Для офиса">Для офиса</MenuItem> */}
                                     <MenuItem value="Для потока производства">Для потока производства</MenuItem>
+                                </TextField>
+                            </Grid>
+                        )}
+                        {purpose === 'Оборудование' && (
+                            <Grid item xs={6}>
+                                <TextField select
+                                    required
+                                    fullWidth
+                                    id="subPurpose"
+                                    label="Подкатегория"
+                                    onChange={(e) => setSubPurpose(e.target.value as string)}
+                                >
+                                    <MenuItem value="Уникальное оборудование">Уникальное оборудование</MenuItem>
+                                    <MenuItem value="Обычное оборудование">Обычное оборудование</MenuItem>
+                               
                                 </TextField>
                             </Grid>
                         )}

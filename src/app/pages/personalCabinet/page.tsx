@@ -13,6 +13,7 @@ import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import Navbar from '@/app/components/navbar'; // Импорт навигационной панели
 import ApplicationCard from '../../components/ApplicationCard'; // Импорт карточки заявки
+import ApplicationCardDopInf from '../../components/ApplicationCardDopInf'; // Импорт карточки заявки
 
 const PersonalCabinetPage: React.FC = () => {
     const [data, setData] = useState([]); // Хранит заявки
@@ -41,7 +42,7 @@ const PersonalCabinetPage: React.FC = () => {
                 const sortedData = response.data.sort((a: any, b: any) => a.id - b.id);
                 setData(sortedData);
                 // console.log(sortedData);
-                
+
             }
         } catch (error) {
             console.error('Ошибка при загрузке заявок:', error);
@@ -53,11 +54,11 @@ const PersonalCabinetPage: React.FC = () => {
         const intervalId = setInterval(() => {
             fetchRequests(userId); // Обновляем данные
         }, 4000); // Обновляем каждые 5 секунд
-    
+
         // Очищаем интервал при размонтировании компонента
         return () => clearInterval(intervalId);
-       
-      }, [userId]);
+
+    }, [userId]);
 
 
     const theme = createTheme({
@@ -78,21 +79,39 @@ const PersonalCabinetPage: React.FC = () => {
                     </Typography>
                     <Grid container spacing={2} justifyContent="center">
                         {data.map((app) => (
-                            <Grid item xs={12} sm={12} md={5} lg={5} key={app.number}>
+                            app.subOrderReason == 'Уникальное оборудование' ?
+                                <Grid item xs={12} sm={12} md={5} lg={5} key={app.number}>
                                     {/* @ts-ignore */}
-                                <ApplicationCard
-                                    number={app.id}
-                                    date={app.date}
-                                      /* @ts-ignore */
-                                    app={app}
-                                    // status={app.status.name}
-                                    /* @ts-ignore */
-                                    items={app.items}
+                                    <ApplicationCardDopInf
+                                        number={app.id}
+                                        date={app.date}
+                                        /* @ts-ignore */
+                                        app={app}
+                                        // status={app.status.name}
+                                        /* @ts-ignore */
+                                        items={app.items}
                                     // quantity={app.items[0].quantity}
                                     // unitMeasurement={app.items[0].unitMeasurement}
-                                  
-                                />
-                            </Grid>
+
+                                    />
+                                </Grid>
+                                :
+                                <Grid item xs={12} sm={12} md={5} lg={5} key={app.number}>
+                                    {/* @ts-ignore */}
+                                    <ApplicationCard
+                                        number={app.id}
+                                        date={app.date}
+                                        /* @ts-ignore */
+                                        app={app}
+                                        // status={app.status.name}
+                                        /* @ts-ignore */
+                                        items={app.items}
+                                    // quantity={app.items[0].quantity}
+                                    // unitMeasurement={app.items[0].unitMeasurement}
+
+                                    />
+                                </Grid>
+                            
                         ))}
                     </Grid>
                 </Box>

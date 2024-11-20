@@ -75,10 +75,16 @@ const RequestBox: React.FC<{
       'Согласование к оплате': { background: '#ccd71a', text: 'Согласование к оплате' },
       'Согласован к оплате': { background: '#ccd71a', text: 'Согласован к оплате' },
       'В работе': { background: '#ccd71a', text: 'В работе' },
+      'Заказано': { background: '#ccd71a', text: 'Заказано' },
+      'Поиск поставщика': { background: '#ccd71a', text: 'Поиск поставщика' },
+      'Ожидает': { background: '#ccd71a', text: 'Ожидает' },
       'Оплачен': { background: '#ccd71a', text: 'Оплачен' },
       'Доставка': { background: '#ccd71a', text: 'Доставляется' },
       'Доставлено': { background: '#00ff10', text: 'Доставлено' },
+      'Доставлено, не оплачено': { background: '#00ff10', text: 'Доставлено, не оплачено' },
+      'Доставлено, оплачено': { background: '#00ff10', text: 'Доставлено, оплачено' },
       'Не согласовано': { background: '#db130b', text: 'Не согласовано' },
+      'Повторное согласование': { background: '#db130b', text: 'Повторное согласование' },
       'Отложено': { background: '#ff5600', text: 'Отложено' },
       'Завершена': { background: '#2dff00', text: 'Завершена' },
       'На уточнении': { background: '#dc9d4d', text: 'На уточнении' },
@@ -166,7 +172,50 @@ const RequestBox: React.FC<{
 
                             }}
                           >
-                            Заказ - {item.item}. Количество - {item.quantity} {item.unitMeasurement}
+                          {/* Позиция: {index +1} {item.item}. Количество - {item.quantity} {item.unitMeasurement} */}
+                          <Typography
+                              variant="subtitle1"
+                              sx={{
+                                // backgroundColor: status.background, // Цвет фона
+                                color: 'black', // Цвет текста
+                                // border: '1px solid #888', // Рамка вокруг текста
+                                borderRadius: 50, // Скругленные углы
+                                padding: '3px 2px', // Отступы внутри текста
+                                // marginLeft: '2px', // Отступ слева для разделения
+                                display: 'inline', // Чтобы текст "Статус" был в одной строке
+                              }}
+                            >
+                               {`${index +1})`}
+                            </Typography>
+                          <Typography
+                              variant="subtitle2"
+                              sx={{
+                                // backgroundColor: status.background, // Цвет фона
+                                color: 'black', // Цвет текста
+                                // border: '1px solid #888', // Рамка вокруг текста
+                                borderRadius: 50, // Скругленные углы
+                                padding: '3px 3px', // Отступы внутри текста
+                                marginLeft: '3px', // Отступ слева для разделения
+                                display: 'inline', // Чтобы текст "Статус" был в одной строке
+                              }}
+                            >
+                             {item.item}
+                            </Typography>
+                          <Typography
+                              variant="subtitle2"
+                              sx={{
+                                // backgroundColor: status.background, // Цвет фона
+                                color: 'black', // Цвет текста
+                                // border: '1px solid #888', // Рамка вокруг текста
+                                borderRadius: 50, // Скругленные углы
+                                padding: '3px 8px', // Отступы внутри текста
+                                // marginLeft: '8px', // Отступ слева для разделения
+                                display: 'inline', // Чтобы текст "Статус" был в одной строке
+                              }}
+                            >
+                              -  {item.quantity} {item.unitMeasurement}
+                            </Typography>
+
                             <Typography
                               variant="subtitle2"
                               sx={{
@@ -175,11 +224,11 @@ const RequestBox: React.FC<{
                                 border: '1px solid #888', // Рамка вокруг текста
                                 borderRadius: 50, // Скругленные углы
                                 padding: '3px 8px', // Отступы внутри текста
-                                marginLeft: '8px', // Отступ слева для разделения
+                                marginLeft: '10px', // Отступ слева для разделения
                                 display: 'inline', // Чтобы текст "Статус" был в одной строке
                               }}
                             >
-                              Статус: {status.text}
+                                 {status.text}
                             </Typography>
 
                           </Typography>
@@ -406,7 +455,7 @@ const RequestsPage: React.FC = () => {
             sx={{
               flexShrink: 0, // Предотвращает сужение Drawer
               '& .MuiDrawer-paper': {
-                width: '80%', // Ширина для десктопных и больших экранов
+                width: '95%', // Ширина для десктопных и больших экранов
                 boxSizing: 'border-box', // Для правильного отображения ширины
               },
               '@media (max-width:600px)': { // Для мобильных устройств
