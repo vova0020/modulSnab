@@ -218,6 +218,26 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
       alert('Ошибка отправки данных');
     }
   };
+  const handleSubmit3 = async () => {
+    const updatedData = formData2.map((item) => ({
+      ...item,
+      amount: parseFloat(item.amount),
+
+    }));
+    try {
+      // console.log(updatedData);
+
+      const response = await axios.put('/api/putSnab3', { requestId, updatedData });
+      if (response.status === 200) {
+        alert('Данные успешно отправлены на сервер!');
+        // fetchRequests()
+      }
+      fetchRequests()
+    } catch (error) {
+      console.error('Ошибка отправки данных:', error);
+      alert('Ошибка отправки данных');
+    }
+  };
 
   const workButton = 'В РАБОТУ';
   const correctionButton = 'ОТПРАВИТЬ НА УТОЧНЕНИЕ';
@@ -361,6 +381,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
         data.deliveryDate
     );
   };
+  
 
   return (
     <Box
@@ -585,96 +606,113 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
 
               <Box>
                 {requestData?.items && formData.length > 0 && requestData.items.map((item, index) => (
-                  item.blocked == true && item.status.id != 14 ?
-                    <Grid container spacing={1} mt={2} sx={{
-                      border: '1px solid #d8d8d8',
+                  // item.blocked == true && item.status.id != 14 ?
+                  <Grid container spacing={1} mt={2} sx={{
+                    border: '1px solid #d8d8d8',
+                    bgcolor: (item.blocked == true && item.status.id != 14) ?'rgb(255, 4, 4)': '' ,
+                    borderRadius: 30,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '20px'
+                  }} key={index}>
+                    <Grid item xs={3}>
 
-                      borderRadius: 30,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '8px'
-                    }} key={index}>
-                      <Grid item xs={3}>
+                      <Box sx={{ display: 'flex', gap: 2, }}>
+                        <TextField variant="standard" label="Заказ" size="small"
+                          value={`${item.item || '....Загрузка'}`} />
+                        <TextField variant="standard" label="Количество" size="small"
+                          value={`${item.quantity || '....Загрузка'} - ${item.unitMeasurement || '....Загрузка'}`} />
+                      </Box>
+                    </Grid>
+                    <Grid item xs={2}>
+                      <TextField label={`Сумма ${item.amount}`} name="amount" fullWidth value={formData2[index].amount} onChange={(e) => handleChange2(index, e)} sx={{
+                        '& .MuiOutlinedInput-root': { borderRadius: '25px' },
+                      }} />
+                    </Grid>
+                    <Grid item xs={1}>
+                      <TextField label={`Номер счета / КП ${item.invoiceNumber || ''}`} name="invoiceNumber" fullWidth value={formData2[index].invoiceNumber} onChange={(e) => handleChange2(index, e)} sx={{
+                        '& .MuiOutlinedInput-root': { borderRadius: '25px' },
+                      }} />
+                    </Grid>
+                    <Grid item xs={1}>
+                      <TextField label={`Поставщик ${item.invoiceNumber || ''}`} name="provider" fullWidth value={formData2[index].provider} onChange={(e) => handleChange2(index, e)} sx={{
+                        '& .MuiOutlinedInput-root': { borderRadius: '25px' },
+                      }} />
+                    </Grid>
+                    <Grid item xs={1}>
+                      <TextField select fullWidth name="oplata" label={`Вариант оплаты ${item.oplata || ''}`} value={formData2[index].oplata} onChange={(e) => handleChange2(index, e)}>
+                        {/* <MenuItem value={10000} disabled>{item.status.name}</MenuItem> */}
+                        <MenuItem value={'Оплата'}>Оплата</MenuItem>
+                        <MenuItem value={'Постоплата'}>Постоплата</MenuItem>
+                        <MenuItem value={'Предоплата'}>Предоплата</MenuItem>
 
-                        <Box sx={{ display: 'flex', gap: 2, }}>
-                          <TextField variant="standard" label="Заказ" size="small"
-                            value={`${item.item || '....Загрузка'}`} />
-                          <TextField variant="standard" label="Количество" size="small"
-                            value={`${item.quantity || '....Загрузка'} - ${item.unitMeasurement || '....Загрузка'}`} />
-                        </Box>
-                      </Grid>
-                      <Grid item xs={2}>
-                        <TextField label={`Сумма ${item.amount}`} name="amount" fullWidth value={formData2[index].amount} onChange={(e) => handleChange2(index, e)} sx={{
-                          '& .MuiOutlinedInput-root': { borderRadius: '25px' },
-                        }} />
-                      </Grid>
-                      <Grid item xs={2}>
-                        <TextField label={`Номер счета / КП ${item.invoiceNumber || ''}`} name="invoiceNumber" fullWidth value={formData2[index].invoiceNumber} onChange={(e) => handleChange2(index, e)} sx={{
-                          '& .MuiOutlinedInput-root': { borderRadius: '25px' },
-                        }} />
-                      </Grid>
-                      <Grid item xs={2}>
-                        <TextField label={`Поставщик ${item.invoiceNumber || ''}`} name="provider" fullWidth value={formData2[index].provider} onChange={(e) => handleChange2(index, e)} sx={{
-                          '& .MuiOutlinedInput-root': { borderRadius: '25px' },
-                        }} />
-                      </Grid>
-                      <Grid item xs={1}>
-                        <TextField select fullWidth name="oplata" label={`Вариант оплаты ${item.oplata || ''}`} value={formData2[index].oplata} onChange={(e) => handleChange2(index, e)}>
-                          {/* <MenuItem value={10000} disabled>{item.status.name}</MenuItem> */}
-                          <MenuItem value={'Оплата'}>Оплата</MenuItem>
-                          <MenuItem value={'Постоплата'}>Постоплата</MenuItem>
-                          <MenuItem value={'Предоплата'}>Предоплата</MenuItem>
-
-                        </TextField>
-                      </Grid>
-
-                      <Grid item xs={2}>
-                        <TextField label="Срок поставки" name="deliveryDate" type="date" InputLabelProps={{ shrink: true }} fullWidth value={formData2[index].deliveryDate} onChange={(e) => handleChange2(index, e)} sx={{
-                          '& .MuiOutlinedInput-root': { borderRadius: '25px' },
-                        }} />
-                      </Grid>
+                      </TextField>
                     </Grid>
 
-                    :
-                    <Grid container spacing={1} mt={2} sx={{
-                      border: '1px solid #d8d8d8',
-                      borderRadius: 30,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '8px'
-                    }} key={index}>
-                      <Grid item xs={8}>
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                          {/* <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#555' }}>Что заказано:</Typography> */}
-                          {/* <Typography variant="body1" sx={{ color: '#333', marginLeft: '5px' }}>
-                          {`${item.item || '....Загрузка'}. Количество: ${item.quantity || '....Загрузка'} - ${item.unitMeasurement || '....Загрузка'}`}
-                        </Typography> */}
-                          <TextField variant="standard" label="Заказ" size="small" fullWidth
-                            value={`${item.item || '....Загрузка'}`} />
-                          <TextField variant="standard" label="Количество" size="small"
-                            value={`${item.quantity || '....Загрузка'} - ${item.unitMeasurement || '....Загрузка'}`} />
-                        </Box>
-                      </Grid>
-                      <Grid item xs={3}>
-                        <TextField select required fullWidth id="status" label="Статус" value={10000} onChange={(e) => handlePurposeChange(index, e, item.id)}>
-                          <MenuItem value={10000} disabled>{item.status.name}</MenuItem>
-                          <MenuItem value={19}>Поиск поставщика</MenuItem>
-                          <MenuItem value={16}>Ожидает</MenuItem>
-                          <MenuItem value={15}>Заказано</MenuItem>
-                          <MenuItem value={7}>Оплачен</MenuItem>
-
-                          {/* <MenuItem value={7}>Оплачен</MenuItem> */}
-                          <MenuItem value={8}>Доставка</MenuItem>
-
-                          <MenuItem value={17}>Доставлено, оплачено</MenuItem>
-                          <MenuItem value={18}>Доставлено, не оплачено</MenuItem>
-
-                          <MenuItem value={13}>Доставлено</MenuItem>
-                        </TextField>
-                      </Grid>
+                    <Grid item xs={2}>
+                      <TextField label={`Срок поставки: ${new Date(formData2[index].deliveryDate).toLocaleDateString('ru-RU')}`} name="deliveryDate" type="date" InputLabelProps={{ shrink: true }} fullWidth value={formData2[index].deliveryDate} onChange={(e) => handleChange2(index, e)} sx={{
+                        '& .MuiOutlinedInput-root': { borderRadius: '25px' },
+                      }} />
                     </Grid>
+                    <Grid item xs={2}>
+                      <TextField select fullWidth id="status" label="Статус" value={10000} onChange={(e) => handlePurposeChange(index, e, item.id)}>
+                        <MenuItem value={10000} disabled>{item.status.name}</MenuItem>
+                        <MenuItem value={19}>Поиск поставщика</MenuItem>
+                        <MenuItem value={16}>Ожидает</MenuItem>
+                        <MenuItem value={15}>Заказано</MenuItem>
+                        <MenuItem value={7}>Оплачен</MenuItem>
+
+                        {/* <MenuItem value={7}>Оплачен</MenuItem> */}
+                        <MenuItem value={8}>Доставка</MenuItem>
+
+                        <MenuItem value={17}>Доставлено, оплачено</MenuItem>
+                        <MenuItem value={18}>Доставлено, не оплачено</MenuItem>
+
+                        <MenuItem value={13}>Доставлено</MenuItem>
+                      </TextField>
+                    </Grid>
+                  </Grid>
+
+                  // :
+                  // <Grid container spacing={1} mt={2} sx={{
+                  //   border: '1px solid #d8d8d8',
+                  //   borderRadius: 30,
+                  //   display: 'flex',
+                  //   alignItems: 'center',
+                  //   justifyContent: 'center',
+                  //   padding: '8px'
+                  // }} key={index}>
+                  //   <Grid item xs={8}>
+                  //     <Box sx={{ display: 'flex', gap: 2 }}>
+                  //       {/* <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#555' }}>Что заказано:</Typography> */}
+                  //       {/* <Typography variant="body1" sx={{ color: '#333', marginLeft: '5px' }}>
+                  //       {`${item.item || '....Загрузка'}. Количество: ${item.quantity || '....Загрузка'} - ${item.unitMeasurement || '....Загрузка'}`}
+                  //     </Typography> */}
+                  //       <TextField variant="standard" label="Заказ" size="small" fullWidth
+                  //         value={`${item.item || '....Загрузка'}`} />
+                  //       <TextField variant="standard" label="Количество" size="small"
+                  //         value={`${item.quantity || '....Загрузка'} - ${item.unitMeasurement || '....Загрузка'}`} />
+                  //     </Box>
+                  //   </Grid>
+                  //   <Grid item xs={3}>
+                  //     <TextField select required fullWidth id="status" label="Статус" value={10000} onChange={(e) => handlePurposeChange(index, e, item.id)}>
+                  //       <MenuItem value={10000} disabled>{item.status.name}</MenuItem>
+                  //       <MenuItem value={19}>Поиск поставщика</MenuItem>
+                  //       <MenuItem value={16}>Ожидает</MenuItem>
+                  //       <MenuItem value={15}>Заказано</MenuItem>
+                  //       <MenuItem value={7}>Оплачен</MenuItem>
+
+                  //       {/* <MenuItem value={7}>Оплачен</MenuItem> */}
+                  //       <MenuItem value={8}>Доставка</MenuItem>
+
+                  //       <MenuItem value={17}>Доставлено, оплачено</MenuItem>
+                  //       <MenuItem value={18}>Доставлено, не оплачено</MenuItem>
+
+                  //       <MenuItem value={13}>Доставлено</MenuItem>
+                  //     </TextField>
+                  //   </Grid>
+                  // </Grid>
                 ))}
               </Box>
             </Box>
@@ -778,12 +816,19 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
           )}
 
           {requestData?.approvedForPayment === true && (
-            requestData?.blocked == true ? <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+            requestData?.blocked == true ? 
+            <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
               <Button variant="contained" color="primary" sx={{ alignSelf: 'flex-end', minWidth: '200px' }} onClick={handleSubmit2}>
                 Сохранить и отправить на повторное согласование
               </Button>
             </Box> :
+            <div style={{display:'flex', width:'100%', justifyContent:'space-between'}}>
               <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+              <Button variant="contained" color="primary" sx={{ alignSelf: 'flex-end', minWidth: '200px' }} onClick={handleSubmit3}>
+                Сохранить изменения
+              </Button>
+            </Box>
+            <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
                 <Button variant="contained" onClick={handleInWorkClick} sx={{
                   minWidth: '150px',
                   backgroundColor: '#2cf501',
@@ -795,6 +840,9 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
                   Завершить
                 </Button>
               </Box>
+            </div>
+            
+            
           )}
         </>
       )}

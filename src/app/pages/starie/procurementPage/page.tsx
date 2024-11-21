@@ -455,7 +455,7 @@ const RequestsPage: React.FC = () => {
             sx={{
               flexShrink: 0, // Предотвращает сужение Drawer
               '& .MuiDrawer-paper': {
-                width: '95%', // Ширина для десктопных и больших экранов
+                width: '98%', // Ширина для десктопных и больших экранов
                 boxSizing: 'border-box', // Для правильного отображения ширины
               },
               '@media (max-width:600px)': { // Для мобильных устройств

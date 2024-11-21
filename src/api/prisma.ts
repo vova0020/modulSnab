@@ -231,6 +231,84 @@ export default class prismaInteraction {
     }
   }
 
+    //  получение заявок для Админки заявки в работе
+    async getComplRequest() {
+      try {
+        const requestData = await prisma.request.findMany({
+          where: {
+  
+            closed: true, // В работе
+  
+          },
+          include: {
+            items: {
+              include: {
+                status: {
+                  select: {
+                    id: true,
+                    name: true,
+                  }
+                }
+              }
+            },
+            status: {
+              select: {
+                id: true,
+                name: true,
+              }
+            },
+            creator: true
+          },
+        });
+        // console.log(JSON.stringify(requestData, null, 2));
+  
+        return requestData;
+      } catch (error) {
+        console.error('Ошибка при получении списка заявок:', error);
+        throw error;
+      } finally {
+        await prisma.$disconnect();
+      }
+    }
+     //  получение заявок для Админки заявки в работе
+     async getWorkRequest() {
+      try {
+        const requestData = await prisma.request.findMany({
+          where: {
+  
+            workSupply: true, // В работе
+  
+          },
+          include: {
+            items: {
+              include: {
+                status: {
+                  select: {
+                    id: true,
+                    name: true,
+                  }
+                }
+              }
+            },
+            status: {
+              select: {
+                id: true,
+                name: true,
+              }
+            },
+            creator: true
+          },
+        });
+        // console.log(JSON.stringify(requestData, null, 2));
+  
+        return requestData;
+      } catch (error) {
+        console.error('Ошибка при получении списка заявок:', error);
+        throw error;
+      } finally {
+        await prisma.$disconnect();
+      }
+    }
 
   // Получение заявок для согласования
   async getRequest() {
@@ -890,7 +968,7 @@ export default class prismaInteraction {
                 supplierName1C: item.itemName1C,
                 supplierName: item.itemNameProvider,
                 amount: item.amount,
-                // oplata: item.oplata,
+                oplata: item.oplata,
                 deliveryDeadline: new Date(item.deliveryDate).toISOString(),
                 status: {
                   connect: { id: 6 }, // Связываем статус (согласование к оплате) с заявкой
@@ -928,7 +1006,54 @@ export default class prismaInteraction {
       await prisma.$disconnect();
     }
   }
+// внесение изменений
+async putRequestSnab3(requestId: number, updatedData: number) {
+  try {
+    // console.log(updatedData);
 
+    // const requestUpdate = await prisma.request.update({
+    //   where: { id: Number(requestId) },
+    //   data: {
+    //     sendSupplyApproval: true,
+    //     approvedForPayment: false,
+    //     invoiceNumber: updatedData.invoiceNumber,
+    //     additionalComment: updatedData.comment,
+    //     // status: {
+    //     //   connect: { id: 5 } // Связываем статус (согласование к оплате) с заявкой
+    //     // },
+    //   },
+    // });
+    const updatedItems = await Promise.all(
+      updatedData.map(async (item) => {
+          return prisma.requestItem.update({
+            where: { id: Number(item.itemsId) },
+            data: {
+              provider: item.provider,
+              supplierName1C: item.itemName1C,
+              supplierName: item.itemNameProvider,
+              amount: item.amount,
+              oplata: item.oplata,
+              deliveryDeadline: new Date(item.deliveryDate).toISOString(),
+              // status: {
+              //   connect: { id: 6 }, // Связываем статус (согласование к оплате) с заявкой
+              // },
+            },
+          });
+       
+      })
+    );
+
+    
+
+
+    return updatedItems;
+  } catch (error) {
+    console.error('Ошибка при получении списка заявок:', error);
+    throw error;
+  } finally {
+    await prisma.$disconnect();
+  }
+}
 
 
 
