@@ -381,7 +381,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
         data.deliveryDate
     );
   };
-  
+
 
   return (
     <Box
@@ -435,6 +435,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
           sx={{
             flex: '2',
             padding: { xs: '10px', md: '20px' },
+            width: '50%',
             backgroundColor: '#f9f9f9',
             borderRadius: '12px',
             boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
@@ -471,13 +472,13 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
             <Box
               sx={{
                 display: 'flex',
-                justifyContent: 'space-between',
+                justifyContent: 'flex-start',
                 alignItems: 'center',
                 borderBottom: '1px solid #eee',
                 paddingBottom: '8px',
               }}
             >
-              <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#555' }}>
+              <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#555', marginRight: '40px' }}>
                 Кто:
               </Typography>
               <Typography variant="body1" sx={{ color: '#333' }}>
@@ -490,19 +491,26 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
             <Box
               sx={{
                 display: 'flex',
-                justifyContent: 'space-between',
+                justifyContent: 'flex-start',
                 alignItems: 'center',
                 borderBottom: '1px solid #eee',
                 paddingBottom: '8px',
               }}
             >
-              <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#555' }}>
+              <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#555', marginRight: '40px' }}>
                 Зачем:
+              </Typography>
+              <Typography variant="body1" sx={{ color: '#333', marginRight: '40px' }}>
+                <>
+                  {requestData?.orderReason || '....Загрузка'}
+
+
+                </>
               </Typography>
               <Typography variant="body1" sx={{ color: '#333' }}>
                 <>
-                  {requestData?.orderReason || '....Загрузка'}
-                  <br />
+
+
                   {requestData?.subOrderReason || '....Загрузка'}
                 </>
               </Typography>
@@ -527,10 +535,10 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
                     <Box
                       sx={{
                         display: 'flex',
-                        justifyContent: 'space-between',
+                        justifyContent: 'flex-start',
                       }}
                     >
-                      <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#555' }}>
+                      <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#555', marginRight: '40px' }}>
                         Позиция {index + 1}
                       </Typography>
 
@@ -544,7 +552,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
             )}
             <Box
               sx={{
-                display: 'flex',
+                // display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 borderBottom: '1px solid #eee',
@@ -554,13 +562,31 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
               <Typography variant="body1" sx={{ fontWeight: 'bold', color: '#555' }}>
                 Комментарий:
               </Typography>
-              <Typography variant="body1" sx={{ color: '#333' }}>
-                {`${requestData?.comment}`}
-              </Typography>
+
+              <Box
+                sx={{
+                  maxHeight: '200px', // Ограничение по высоте
+                  maxWidth: '100%',
+                  overflowY: 'auto', // Вертикальная прокрутка
+                  padding: '8px', // Внутренний отступ
+                  border: '1px solid #ddd', // Граница для визуального разделения (опционально)
+                  borderRadius: '4px', // Скругленные углы (опционально)
+                  backgroundColor: '#f9f9f9', // Фон для читаемости (опционально)
+                }}
+              >
+                <Typography variant="body1" sx={{ color: '#333' }}>
+                  {requestData?.comment || 'Комментарий отсутствует'}
+                </Typography>
+              </Box>
             </Box>
           </Box>
         </Box>
-        <Messager requestId={requestData?.id} />
+        <div style={{
+          width: ' 30%'
+        }}>
+          <Messager requestId={requestData?.id} />
+        </div>
+
       </Box>
 
       {requestData?.closed === true ? null : (
@@ -609,7 +635,7 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
                   // item.blocked == true && item.status.id != 14 ?
                   <Grid container spacing={1} mt={2} sx={{
                     border: '1px solid #d8d8d8',
-                    bgcolor: (item.blocked == true && item.status.id != 14) ?'rgb(255, 4, 4)': '' ,
+                    bgcolor: (item.blocked == true && item.status.id != 14) ? 'rgb(255, 4, 4)' : '',
                     borderRadius: 30,
                     display: 'flex',
                     alignItems: 'center',
@@ -816,33 +842,33 @@ const ApplicationPage: React.FC<ApplicationPageProps> = ({ requestId }) => {
           )}
 
           {requestData?.approvedForPayment === true && (
-            requestData?.blocked == true ? 
-            <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
-              <Button variant="contained" color="primary" sx={{ alignSelf: 'flex-end', minWidth: '200px' }} onClick={handleSubmit2}>
-                Сохранить и отправить на повторное согласование
-              </Button>
-            </Box> :
-            <div style={{display:'flex', width:'100%', justifyContent:'space-between'}}>
+            requestData?.blocked == true ?
               <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
-              <Button variant="contained" color="primary" sx={{ alignSelf: 'flex-end', minWidth: '200px' }} onClick={handleSubmit3}>
-                Сохранить изменения
-              </Button>
-            </Box>
-            <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
-                <Button variant="contained" onClick={handleInWorkClick} sx={{
-                  minWidth: '150px',
-                  backgroundColor: '#2cf501',
-                  color: 'black',
-                  '&:hover': {
-                    backgroundColor: '#24d401'
-                  }
-                }}>
-                  Завершить
+                <Button variant="contained" color="primary" sx={{ alignSelf: 'flex-end', minWidth: '200px' }} onClick={handleSubmit2}>
+                  Сохранить и отправить на повторное согласование
                 </Button>
-              </Box>
-            </div>
-            
-            
+              </Box> :
+              <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+                  <Button variant="contained" color="primary" sx={{ alignSelf: 'flex-end', minWidth: '200px' }} onClick={handleSubmit3}>
+                    Сохранить изменения
+                  </Button>
+                </Box>
+                <Box sx={{ display: 'flex', gap: '20px', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+                  <Button variant="contained" onClick={handleInWorkClick} sx={{
+                    minWidth: '150px',
+                    backgroundColor: '#2cf501',
+                    color: 'black',
+                    '&:hover': {
+                      backgroundColor: '#24d401'
+                    }
+                  }}>
+                    Завершить
+                  </Button>
+                </Box>
+              </div>
+
+
           )}
         </>
       )}

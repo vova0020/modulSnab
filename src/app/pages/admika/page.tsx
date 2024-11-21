@@ -442,7 +442,7 @@ const AdminPage: React.FC = () => {
                     </Typography>
                     <Box sx={{ textAlign: 'center', mt: 4 }}>
                         <img
-                            src="/zaglushka.jpg"
+                            src="https://zgpc.ru/upload/medialibrary/801/801ae347c18e432657e395c91c6e5013.jpg"
                             alt="Описание изображения"
                             style={{ maxWidth: '100%', height: '300px', borderRadius: '8px' }}
                         />
