@@ -37,17 +37,17 @@ const EditApplicationDialog: React.FC<EditApplicationDialogProps> = ({ open, onC
         const updatedItems = [...editedData.items];
         updatedItems[index] = { ...updatedItems[index], [field]: value };
         setEditedData((prevData: any) => ({
-          ...prevData,
-          items: updatedItems,
+            ...prevData,
+            items: updatedItems,
         }));
-      };
-      
+    };
+
 
     const handleSave = async () => {
         await onSave(editedData);
         onClose();
     };
-   
+
 
     return (
         <Dialog open={open} onClose={onClose}>
@@ -101,7 +101,7 @@ const EditApplicationDialog: React.FC<EditApplicationDialogProps> = ({ open, onC
                                     fullWidth
                                     margin="normal"
                                 />
-                                <TextField
+                                {/* <TextField
                                     label="Сколько заказано"
                                     value={item?.quantity || ''}
                                     onChange={(e) => {
@@ -117,6 +117,23 @@ const EditApplicationDialog: React.FC<EditApplicationDialogProps> = ({ open, onC
                                     margin="normal"
                                     type="number" // Используем type="number" для лучшей поддержки на мобильных устройствах
                                     inputProps={{ min: 0 }} // Ограничиваем минимальное значение
+                                /> */}
+
+                                <TextField
+                                    required
+                                    label="Сколько заказано"
+                                    type="number"
+                                    value={item?.quantity || ''} // Отображаем пустую строку вместо 0
+                                    onChange={(e) => {
+                                        const inputValue = e.target.value;
+                                        handleItemChange(index, 'quantity', parseFloat(inputValue) || 0);
+                                    }}
+                                    inputProps={{
+                                        step: "0.1",
+                                        lang: "en-US", // Принудительно использовать точку как разделитель
+                                        min: 0
+                                    }}
+                                    fullWidth
                                 />
 
                                 <TextField

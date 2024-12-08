@@ -74,7 +74,7 @@ model Request {
 model RequestItem {
   id               Int             @id @default(autoincrement())
   item             String? // Что заказано
-  quantity         Int? // Количество
+  quantity         Float? // Количество
   promptness       String? // Срочность  
   unitMeasurement  String? // Единица измерения
   invoiceNumber    String? // Номер счета

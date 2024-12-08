@@ -223,7 +223,7 @@ export default function Applications() {
         }
         setOrders(newPositions);
     };
-    
+
 
 
     return (
@@ -389,7 +389,7 @@ export default function Applications() {
                                 >
                                     <MenuItem value="Уникальное оборудование">Уникальное оборудование</MenuItem>
                                     <MenuItem value="Обычное оборудование">Обычное оборудование</MenuItem>
-                               
+
                                 </TextField>
                             </Grid>
                         )}
@@ -420,13 +420,18 @@ export default function Applications() {
                                         required
                                         label="Количество"
                                         type="number"
-                                        value={position.quantity === 0 ? '' : position.quantity} // Отображаем пустую строку вместо 0
+                                        value={position.quantity || ''} // Отображаем пустую строку вместо 0
                                         onChange={(e) => {
-                                            const inputValue = e.target.value.replace(/^0+/, ''); // Убираем лидирующие нули
-                                            handlePositionChange(index, 'quantity', inputValue ? parseInt(inputValue) : 0);
+                                            const inputValue = e.target.value;
+                                            handlePositionChange(index, 'quantity', parseFloat(inputValue) || 0);
+                                        }}
+                                        inputProps={{
+                                            step: "0.1",
+                                            lang: "en-US" // Принудительно использовать точку как разделитель
                                         }}
                                         fullWidth
                                     />
+
                                 </Grid>
                                 <Grid item xs={12} sm={3}>
                                     <TextField select
