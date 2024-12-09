@@ -47,7 +47,10 @@ const StyledCard = styled(Card)(({ theme, highlight }: { highlight?: boolean }) 
 let statusLabel = ''
 const getStatusColor = (app: string) => {
     // console.log(app?.status?.name);
-
+    if(app.closed === true){
+        statusLabel = 'Завершено';
+        return 'success';
+    }
     if (app?.status?.name === 'На уточнении') {
         statusLabel = 'Нужно уточнение';
         return 'warning';
@@ -69,6 +72,7 @@ const getStatusColor = (app: string) => {
         statusLabel = 'Ожидает согласования';
         return 'default';
     }
+    
 
     // switch (status) {
     //     case 'В работе':
@@ -134,7 +138,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, app, it
         'Оплачен': { background: '#ccd71a', text: 'Оплачен' },
         'Доставка': { background: '#ccd71a', text: 'Доставляется' },
         'Доставлено': { background: '#00ff10', text: 'Доставлено' },
-        'Завершена': { background: '#00ff10', text: 'Завершена' },
+        'Завершен': { background: '#00ff10', text: 'Завершена' },
         'Не согласовано': { background: '#db130b', text: 'Не согласовано' },
         'Отложено': { background: '#ff5600', text: 'Отложено' },
         'На уточнении': { background: '#ff5600', text: 'Нужно уточнить' },
