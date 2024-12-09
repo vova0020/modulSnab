@@ -50,28 +50,30 @@ const getStatusColor = (app: string) => {
     if(app.closed === true){
         statusLabel = 'Завершено';
         return 'success';
+    } else {
+        if (app?.status?.name === 'На уточнении') {
+            statusLabel = 'Нужно уточнение';
+            return 'warning';
+    
+        }
+        if (app.workSupply === true) { // В работе у снабжения
+            statusLabel = 'В работе у снабжения';
+            return 'success';
+        } else if (app.approvedForPurchase === false && app.cancellationPurchase === true) { // Согласование к закупке
+            statusLabel = 'Не согласован';
+            return 'error';
+        } else if (app.approvedForPurchase === false && app.expectationPurchase === true) { // Согласование к покупке
+            statusLabel = 'Отложено';
+            return 'warning';
+        } else if (app.approvedForPurchase === true) { // Согласование к покупке
+            statusLabel = 'Согласовано';
+            return 'success';
+        } else if (app.approvedForPurchase === false) { // Согласование к закупке
+            statusLabel = 'Ожидает согласования';
+            return 'default';
+        }
     }
-    if (app?.status?.name === 'На уточнении') {
-        statusLabel = 'Нужно уточнение';
-        return 'warning';
-
-    }
-    if (app.workSupply === true) { // В работе у снабжения
-        statusLabel = 'В работе у снабжения';
-        return 'success';
-    } else if (app.approvedForPurchase === false && app.cancellationPurchase === true) { // Согласование к закупке
-        statusLabel = 'Не согласован';
-        return 'error';
-    } else if (app.approvedForPurchase === false && app.expectationPurchase === true) { // Согласование к покупке
-        statusLabel = 'Отложено';
-        return 'warning';
-    } else if (app.approvedForPurchase === true) { // Согласование к покупке
-        statusLabel = 'Согласовано';
-        return 'success';
-    } else if (app.approvedForPurchase === false) { // Согласование к закупке
-        statusLabel = 'Ожидает согласования';
-        return 'default';
-    }
+    
     
 
     // switch (status) {
