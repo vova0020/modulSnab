@@ -45,52 +45,35 @@ const StyledCard = styled(Card)(({ theme, highlight }: { highlight?: boolean }) 
 }));
 
 let statusLabel = ''
-const getStatusColor = (app: string) => {
-    // console.log(app?.status?.name);
-    if(app.closed === true){
-        statusLabel = 'Завершено';
-        return 'success';
-    } else {
-        if (app?.status?.name === 'На уточнении') {
-            statusLabel = 'Нужно уточнение';
-            return 'warning';
-    
-        }
-        if (app.workSupply === true) { // В работе у снабжения
-            statusLabel = 'В работе у снабжения';
-            return 'success';
-        } else if (app.approvedForPurchase === false && app.cancellationPurchase === true) { // Согласование к закупке
-            statusLabel = 'Не согласован';
-            return 'error';
-        } else if (app.approvedForPurchase === false && app.expectationPurchase === true) { // Согласование к покупке
-            statusLabel = 'Отложено';
-            return 'warning';
-        } else if (app.approvedForPurchase === true) { // Согласование к покупке
-            statusLabel = 'Согласовано';
-            return 'success';
-        } else if (app.approvedForPurchase === false) { // Согласование к закупке
-            statusLabel = 'Ожидает согласования';
-            return 'default';
-        }
-    }
-    
-    
 
-    // switch (status) {
-    //     case 'В работе':
-    //         return 'primary';
-    //     case 'Завершена':
-    //         return 'success';
-    //     case 'В ожидании':
-    //         return 'warning';
-    //     case 'На уточнении':
-    //         return 'error';
-    //     default:
-    //         return 'default';
-    // }
-};
 
 const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, app, items }) => {
+    const getStatusColor = (app: any) => {
+        if (app.closed === true) {
+            return { color: 'success', label: 'Завершено' };
+        }
+        if (app?.status?.name === 'На уточнении') {
+            return { color: 'warning', label: 'Нужно уточнение' };
+        }
+        if (app.workSupply === true) {
+            return { color: 'success', label: 'В работе у снабжения' };
+        }
+        if (app.approvedForPurchase === false && app.cancellationPurchase === true) {
+            return { color: 'error', label: 'Не согласован' };
+        }
+        if (app.approvedForPurchase === false && app.expectationPurchase === true) {
+            return { color: 'warning', label: 'Отложено' };
+        }
+        if (app.approvedForPurchase === true) {
+            return { color: 'success', label: 'Согласовано' };
+        }
+        if (app.approvedForPurchase === false) {
+            return { color: 'default', label: 'Ожидает согласования' };
+        }
+    
+        return { color: 'default', label: 'Неизвестный статус' };
+    };
+    const statusInfo = getStatusColor(app);
     const isHighlight = status === 'На уточнении';
     const [isHovered, setIsHovered] = useState(false);
     const [openDialog, setOpenDialog] = useState(false);
@@ -234,7 +217,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, app, it
                                         display: 'inline', // Чтобы текст "Статус" был в одной строке
                                     }}
                                 >
-                                 Дата доставки: {item.deliveryDeadline ? new Date(item.deliveryDeadline).toLocaleDateString('ru-RU') : '...нет данных'}
+                                    Дата доставки: {item.deliveryDeadline ? new Date(item.deliveryDeadline).toLocaleDateString('ru-RU') : '...нет данных'}
 
                                 </Typography>
                                 <Typography
@@ -258,8 +241,8 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({ number, date, app, it
                 </Box>
                 <Box mt={1}>
                     <Chip
-                        label={statusLabel}
-                        color={getStatusColor(app)}
+                        label={statusInfo.label}
+                        color={statusInfo.color}
                         sx={{
                             fontSize: '0.75rem',
                             fontWeight: 'bold',
