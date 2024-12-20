@@ -129,6 +129,7 @@ const RequestBox: React.FC<{
                     {req.expectationPurchase ?
                       <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
                         <Typography variant="body1">Заявка № {req.id}</Typography>
+                        <Typography variant="body2">Заказчик - {req.creator.firstName} {req.creator.lastName}</Typography>
                         <Typography variant="body2">
                           Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
                         </Typography>
@@ -139,6 +140,7 @@ const RequestBox: React.FC<{
                       :
                       <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
                         <Typography variant="body1">Заявка № {req.id}</Typography>
+                        <Typography variant="body2">Заказчик - {req.creator.firstName} {req.creator.lastName}</Typography>
                         <Typography variant="body2">
                           Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
                         </Typography>
@@ -262,6 +264,8 @@ const RequestBox2: React.FC<{
       await axios.put('/api/blokStatusTable', { item, status });
       fetchRequests()
     };
+    console.log(requests);
+    
 
     return (
       <Accordion
@@ -295,6 +299,7 @@ const RequestBox2: React.FC<{
                     {req.expectationPayment ?
                       <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
                         <Typography variant="body1">Заявка № {req.id}</Typography>
+                        <Typography variant="body2">Заказчик - {req.creator.firstName} {req.creator.lastName}</Typography>
                         <Typography variant="body2">
                           Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
                         </Typography>
@@ -305,6 +310,7 @@ const RequestBox2: React.FC<{
                       :
                       <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
                         <Typography variant="body1">Заявка № {req.id}</Typography>
+                        <Typography variant="body2">Заказчик - {req.creator.firstName} {req.creator.lastName}</Typography>
                         <Typography variant="body2">
                           Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
                         </Typography>

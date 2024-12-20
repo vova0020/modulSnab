@@ -93,6 +93,8 @@ const RequestBox: React.FC<{
       'default': { background: '#f0f0f0', text: 'Не указан' }
     };
 
+    
+
     // Функция для получения цвета и текста на основе статуса
     const getStatusInfo = (status: string) => {
       return statusColors[status] || statusColors['default'];
@@ -140,6 +142,7 @@ const RequestBox: React.FC<{
                       <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
                         <Typography variant="body1">{req?.status?.name}</Typography>
                         <Typography variant="body1">Заявка № {req.id}</Typography>
+                        <Typography variant="body2">Автор - {req.creator.firstName} {req.creator.lastName}</Typography>
                         <Typography variant="body2">
                           Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
                         </Typography>
@@ -150,6 +153,7 @@ const RequestBox: React.FC<{
                       :
                       <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
                         <Typography variant="body1">Заявка № {req.id}</Typography>
+                        <Typography variant="body2">Заказчик - {req.creator.firstName} {req.creator.lastName}</Typography>
                         <Typography variant="body2">
                           Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
                         </Typography>

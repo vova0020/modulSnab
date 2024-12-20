@@ -324,6 +324,13 @@ export default class prismaInteraction {
         },
 
         include: {
+          creator: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            }
+          },
           items: {
             include: {
               status: {
@@ -356,6 +363,13 @@ export default class prismaInteraction {
 
         },
         include: {
+          creator: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            }
+          },
           items: {
             include: {
               status: {
