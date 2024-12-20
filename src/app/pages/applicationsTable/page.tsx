@@ -43,6 +43,10 @@ type Request = {
   items,
   expectationPurchase,
   expectationPayment
+  creator:{
+    firstName:string;
+    lastName:string;
+  };
 };
 
 // Компонент с деталями заявки
@@ -129,7 +133,7 @@ const RequestBox: React.FC<{
                     {req.expectationPurchase ?
                       <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
                         <Typography variant="body1">Заявка № {req.id}</Typography>
-                        <Typography variant="body2">Заказчик - {req.creator.firstName} {req.creator.lastName}</Typography>
+                        <Typography variant="body2">Заказчик - {req?.creator?.firstName} {req?.creator?.lastName}</Typography>
                         <Typography variant="body2">
                           Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
                         </Typography>
@@ -140,7 +144,7 @@ const RequestBox: React.FC<{
                       :
                       <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
                         <Typography variant="body1">Заявка № {req.id}</Typography>
-                        <Typography variant="body2">Заказчик - {req.creator.firstName} {req.creator.lastName}</Typography>
+                        <Typography variant="body2">Заказчик - {req?.creator?.firstName} {req?.creator?.lastName}</Typography>
                         <Typography variant="body2">
                           Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
                         </Typography>
@@ -299,7 +303,7 @@ const RequestBox2: React.FC<{
                     {req.expectationPayment ?
                       <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
                         <Typography variant="body1">Заявка № {req.id}</Typography>
-                        <Typography variant="body2">Заказчик - {req.creator.firstName} {req.creator.lastName}</Typography>
+                        <Typography variant="body2">Заказчик - {req.creator?.firstName} {req.creator?.lastName}</Typography>
                         <Typography variant="body2">
                           Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
                         </Typography>
@@ -310,7 +314,7 @@ const RequestBox2: React.FC<{
                       :
                       <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
                         <Typography variant="body1">Заявка № {req.id}</Typography>
-                        <Typography variant="body2">Заказчик - {req.creator.firstName} {req.creator.lastName}</Typography>
+                        <Typography variant="body2">Заказчик - {req.creator?.firstName} {req.creator?.lastName}</Typography>
                         <Typography variant="body2">
                           Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
                         </Typography>

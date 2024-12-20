@@ -40,6 +40,10 @@ type Request = {
     name:string;
     id:number;
   };
+  creator:{
+    firstName:string;
+    lastName:string;
+  };
   expectationPurchase;
 };
 
@@ -142,7 +146,7 @@ const RequestBox: React.FC<{
                       <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
                         <Typography variant="body1">{req?.status?.name}</Typography>
                         <Typography variant="body1">Заявка № {req.id}</Typography>
-                        <Typography variant="body2">Автор - {req.creator.firstName} {req.creator.lastName}</Typography>
+                        <Typography variant="body2">Заказчик - {req.creator?.firstName} {req.creator?.lastName}</Typography>
                         <Typography variant="body2">
                           Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
                         </Typography>
@@ -153,7 +157,7 @@ const RequestBox: React.FC<{
                       :
                       <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom='5px'>
                         <Typography variant="body1">Заявка № {req.id}</Typography>
-                        <Typography variant="body2">Заказчик - {req.creator.firstName} {req.creator.lastName}</Typography>
+                        <Typography variant="body2">Заказчик - {req.creator?.firstName} {req.creator?.lastName}</Typography>
                         <Typography variant="body2">
                           Дата: {new Date(req.date).toLocaleDateString('ru-RU')}
                         </Typography>
