@@ -474,6 +474,7 @@ const AdminPage: React.FC = () => {
                     </Button>
 
                     <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleCloseSnackbar}>
+                    {/*  @ts-ignore */}
                         <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
                             {snackbarMessage}
                         </Alert>

@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
     
     // Проверка роли
+        // @ts-ignore
     if (decoded.role !== 'Руководство') {
       return NextResponse.json({ message: "Недостаточно прав" }, { status: 403 });
     }
@@ -43,6 +44,7 @@ export async function POST(req: NextRequest) {
       const decoded = jwt.verify(token, process.env.SECRET_KEY);
       
       // Проверка роли
+          // @ts-ignore
       if (decoded.role !== 'Руководство') {
         return NextResponse.json({ message: "Недостаточно прав" }, { status: 403 });
       }
