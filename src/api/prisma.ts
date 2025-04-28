@@ -2,7 +2,7 @@
 
 // @ts-nocheck
 import { PrismaClient } from '@prisma/client';
-
+import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 
@@ -1322,7 +1322,53 @@ async putRequestSnab3(requestId: number, updatedData: number) {
     return newUser; // Возвращаем созданного пользователя
   }
 
-
+  async getAllUsers() {
+    try {
+      const users = await prisma.user.findMany({
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          login: true,
+          role: true,
+        },
+      });
+      return users;
+    } catch (error) {
+      console.error('Ошибка при получении списка пользователей:', error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
+  
+  async updateUserPassword(userId: number, newPassword: string) {
+    try {
+      // Хеширование пароля
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      
+      const updatedUser = await prisma.user.update({
+        where: { id: Number(userId) },
+        data: {
+          password: hashedPassword,
+        },
+      });
+      
+      return {
+        success: true,
+        message: "Пароль успешно обновлен",
+        user: {
+          id: updatedUser.id,
+          login: updatedUser.login,
+        }
+      };
+    } catch (error) {
+      console.error('Ошибка при обновлении пароля пользователя:', error);
+      throw error;
+    } finally {
+      await prisma.$disconnect();
+    }
+  }
 
 
 
